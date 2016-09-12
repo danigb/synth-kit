@@ -33,5 +33,8 @@
     "rollup-watch": "^2.5.0",
     "tape": "^4.6.0",
     "web-audio-test-api": "^0.5.2"
+  },
+  "dependencies": {
+    "audio-context": "^0.1.0"
   }
 }

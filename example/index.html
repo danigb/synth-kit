@@ -7,13 +7,15 @@
 	<!-- link href="https://fonts.googleapis.com/css?family=PT+Sans" rel="stylesheet"-->
   <style>
 		html { font-family: 'PT Sans', sans-serif; }
-		#meter { position: fixed; width: 100%; top: 0; background: white; }
-		#main { max-width: 600px; margin: 100px auto; }
+		#top { position: fixed; width: 100%; top: 0; background: white; }
+		.center { max-width: 600px; margin: 0px auto; }
+		#main { margin-top: 140px; }
   </style>
 <body>
-	<div id="meter">
+	<div id="top">
+		<div id="meter" class="center">SynthKit</div>
 	</div>
-  <div id="main">
+  <div id="main" class="center">
   </div>
   <script type="text/javascript" src="../dist/synth-kit.js"></script>
   <script type="text/javascript" src="examples.js"></script>
