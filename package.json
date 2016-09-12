@@ -1,0 +1,37 @@
+{
+  "name": "synth-kit",
+  "version": "0.0.0",
+  "description": "A (web audio) synth construction kit",
+  "main": "dist/synth-kit.js",
+  "jsnext:main": "index",
+  "scripts": {
+    "pretest": "rollup lib/index.js -f umd -n SynthKit -o dist/synth-kit.js",
+    "test": "tape 'test/*.js'",
+    "dist": "npm test && uglifyjs dist/synth-kit.js > dist/synth-kit.min.js && ls -hall dist/",
+    "dev": "rollup lib/index.js --watch -f umd -n SynthKit -o dist/synth-kit.js",
+    "example": "budo example/nodes.js",
+    "prepublish": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danigb/synth-kit.git"
+  },
+  "keywords": [
+    "synth",
+    "webaudio",
+    "music",
+    "generation"
+  ],
+  "author": "danigb",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danigb/synth-kit/issues"
+  },
+  "homepage": "https://github.com/danigb/synth-kit#readme",
+  "devDependencies": {
+    "rollup": "^0.34.10",
+    "rollup-watch": "^2.5.0",
+    "tape": "^4.6.0",
+    "web-audio-test-api": "^0.5.2"
+  }
+}
