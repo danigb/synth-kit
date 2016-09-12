@@ -590,8 +590,6 @@ WaveShaperCurve$1.defaultProps = {
   length: 1024, generator: 'none'
 }
 
-// arbitrary constant for overdrive
-
 
 
 var Nodes = Object.freeze({

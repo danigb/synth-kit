@@ -28,9 +28,9 @@ Let's make a tremolo by modulating the gain with a square oscillator:
 Connect(Sine(400), Gain(Square(2)))
 ```
 
-Or a vibrato (the second parameter of `Sine` is the `detune` option):
+Or a vibrato (the second parameter of `Sine` is the `detune` option. Here we are detuning a tone, 100 cents):
 ```js
-Sine(400, Connect(Sine(2), Gain(100)))
+Sine(400, Mult(100, Sine(2)))
 ```
 
 You can make reusable functions:
@@ -48,6 +48,27 @@ var sound = Add(
   Connect(MySnare(800), Reverb())
 )
 ```
+
+## Synth construction kit
+
+Those are the functions currently implemented:
+
+- Routing: Connect, Add, Destination
+- Signals: Signal, Gain, Silence, Bypass, Pulse, Invert, Mult, Mod
+- Oscillators: Osc, Sine, Saw, Square, Triangle
+- Buffers: White
+- Filters: Lowpass, Hipass, Bandpass
+- Envelopes: ADSR, AD, Perc
+- Effects: Mix, Reverb
+- Waveshapers: SoftClip, HardClip
+- Helpers: bpmToHz, audioToGain
+
+Comming soon:
+
+- Oscillators: PulseWave
+- Effects: Delay, Tremolo, Overdrive
+- Drums: kick, snare, cowbell, clave...
+- Synths: Mono, Duo, FM
 
 ## Install
 
