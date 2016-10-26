@@ -5,11 +5,12 @@
   "main": "dist/synth-kit.js",
   "jsnext:main": "index",
   "scripts": {
-    "pretest": "rollup lib/index.js -f umd -n SynthKit -o dist/synth-kit.js",
-    "test": "tape 'test/*.js'",
+    "pretest": "rollup -c",
+    "test": "tape 'test/**/*.js'",
     "dist": "npm test && uglifyjs dist/synth-kit.js > dist/synth-kit.min.js && ls -hall dist/",
-    "dev": "rollup lib/index.js --watch -f umd -n SynthKit -o dist/synth-kit.js",
+    "dev": "rollup -c --watch",
     "example": "budo example/nodes.js",
+    "start": "budo example/livecoding.js --open",
     "prepublish": "npm test"
   },
   "repository": {
@@ -29,9 +30,11 @@
   },
   "homepage": "https://github.com/danigb/synth-kit#readme",
   "devDependencies": {
-    "rollup": "^0.34.10",
+    "rollup": "^0.36.3",
+    "rollup-plugin-commonjs": "^5.0.5",
+    "rollup-plugin-node-resolve": "^2.0.0",
     "rollup-watch": "^2.5.0",
-    "tape": "^4.6.0",
+    "tape": "^4.6.2",
     "web-audio-test-api": "^0.5.2"
   },
   "dependencies": {
