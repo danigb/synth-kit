@@ -1,6 +1,6 @@
 var Note = require('note-parser')
 var { context, connect, gain, filter, fetch, dest,
-  decodeAudio, inst, withOptions, sample, adsr } = require('..')
+  decodeAudio, inst, withOptions, source, adsr } = require('..')
 function is (t, x) { return typeof x === t }
 // import Note from 'note-parser'
 // import { fetch, decodeAudio } from './load'
@@ -41,27 +41,38 @@ function load (name, options) {
   return promise.then(decodeSoundfont(o.context, o.decodeAudio))
 }
 
+var INST_DEFAULTS = {
+  gain: 1, filter: { type: 'lowpass', frequency: '22000' },
+  attack: 0.01, decay: 0.1, sustain: 0.8, release: 0.4
+}
+
+/**
+ * Create a soundfont instrument.
+ * @param {String} name - the soundfont name
+ * @param {Object} options - (Optional) soundfont options
+ * @return {Instrument} the soundfont instrument
+ * @example
+ * var piano = Soundfont.instrument('Acoustic Grand Piano')
+ * piano.on('ready', function () {
+ *    piano.start('C4')
+ * })
+ */
 function instrument (name, options) {
   var buffers = null
-  var select = function (midi) {
+  var sample = function (midi) {
     if (buffers) return buffers[midi]
     console.warn('Instrument "' + name + '" not loaded yet.')
   }
-
-  var synth = withOptions(function (o) {
+  var synth = function (o) {
     return connect(
-      sample(select(o.midi)),
+      source(sample(o.midi)),
       filter(o.filter.type, o.filter.freq),
       /* adsr(o), */
       gain(o.gain)
     )
-  }, {
-    defaults: {
-      gain: 1, filter: { type: 'lowpass', frequency: '22000' },
-      attack: 0.01, decay: 0.1, sustain: 0.8, release: 0.4
-    },
-    toOptions: prepareOptions
-  })
+  }
+
+  synth = withOptions(synth, { defaults: INST_DEFAULTS, toOptions: prepareOptions })
   var sf = inst(synth, dest())
   load(name, options).then(function (result) {
     buffers = result

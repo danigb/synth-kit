@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>context.js - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#add">add</a></li><li><a href="global.html#adshr">adshr</a></li><li><a href="global.html#after">after</a></li><li><a href="global.html#bypass">bypass</a></li><li><a href="global.html#connect">connect</a></li><li><a href="global.html#constant">constant</a></li><li><a href="global.html#context">context</a></li><li><a href="global.html#contextOf">contextOf</a></li><li><a href="global.html#dest">dest</a></li><li><a href="global.html#detune">detune</a></li><li><a href="global.html#feedback">feedback</a></li><li><a href="global.html#fetch">fetch</a></li><li><a href="global.html#filter">filter</a></li><li><a href="global.html#gain">gain</a></li><li><a href="global.html#generate">generate</a></li><li><a href="global.html#inst">inst</a></li><li><a href="global.html#lifecycle">lifecycle</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#master">master</a></li><li><a href="global.html#mult">mult</a></li><li><a href="global.html#note">note</a></li><li><a href="global.html#now">now</a></li><li><a href="global.html#osc">osc</a></li><li><a href="global.html#oscBank">oscBank</a></li><li><a href="global.html#perc">perc</a></li><li><a href="global.html#plug">plug</a></li><li><a href="global.html#sample">sample</a></li><li><a href="global.html#samplingRate">samplingRate</a></li><li><a href="global.html#scale">scale</a></li><li><a href="global.html#seconds">seconds</a></li><li><a href="global.html#source">source</a></li><li><a href="global.html#tempo">tempo</a></li><li><a href="global.html#when">when</a></li><li><a href="global.html#white">white</a></li><li><a href="global.html#withNotes">withNotes</a></li><li><a href="global.html#withOptions">withOptions</a></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">context.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import ac from 'audio-context'
+
+// Shim to make connect chainable (soon to be implemented native)
+var proto = Object.getPrototypeOf(Object.getPrototypeOf(ac.createGain()))
+var _connect = proto.connect
+proto.connect = function () {
+  _connect.apply(this, arguments)
+  return this
+}
+
+/**
+ * Get the audio context
+ */
+export function context (ctx) { return ctx || ac }
+
+/**
+ * Get the audio context of an audio node
+ */
+export function contextOf (node) { return node ? context(node.context) : ac }
+
+/**
+ * Get the audio context's destination
+ */
+export function dest (context) { return (context || ac).destination }
+
+/**
+ * Get audio context's current time
+ */
+export function now (context) { return (context || ac).currentTime }
+
+/**
+ * Get a valid time
+ * @param {Float} time - the time (equal or greater than now(), otherwise, ignored)
+ * @param {Float} delay - the delay
+ * @param {AudioContext} context - (Optional) the audio context
+ * @example
+ * now() // => 0.7
+ * time(0.2) // => 0.7
+ * time(1) // => 1
+ * time(0.2, 1) // => 1.7 (time is ignored because is &lt; than now())
+ */
+export function when (time, delay, ctx) {
+  return Math.max(now(ctx), time || 0) + (delay || 0)
+}
+
+/**
+ * Get time after n seconds (from now)
+ * @param {Float} delay - the delay
+ * @param {AudioContext} context - (Optional) the audio context
+ * @return {Float} time in seconds
+ * @example
+ * now() // => 0.785
+ * after(1) // => 1.785
+ */
+export var after = when.bind(0)
+
+/**
+ * Get audio context sampling rate
+ * @param {AudioContext} context - (Optional) the audio context
+ * @return {Integer} the context's sampling rate
+ * @example
+ * samplingRate() // => 44100
+ */
+export function samplingRate (context) { return (context || ac).sampleRate }
+
+/**
+ * Convert from seconds to samples (using AudioContext sampling rate)
+ * @param {Float} seconds - the number of seconds
+ * @param {AudioContext} context - (Optional) the audio context
+ * @return {Integer} the number of samples
+ * @example
+ * white(seconds(1.2)) // => generate 1.2 seconds of white noise
+ */
+export function seconds (secs, context) { return secs * samplingRate(context) }
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.2</a> on Fri Oct 28 2016 12:58:38 GMT+0200 (CEST) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>core.js - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#add">add</a></li><li><a href="global.html#adshr">adshr</a></li><li><a href="global.html#after">after</a></li><li><a href="global.html#bypass">bypass</a></li><li><a href="global.html#connect">connect</a></li><li><a href="global.html#constant">constant</a></li><li><a href="global.html#context">context</a></li><li><a href="global.html#contextOf">contextOf</a></li><li><a href="global.html#dest">dest</a></li><li><a href="global.html#detune">detune</a></li><li><a href="global.html#feedback">feedback</a></li><li><a href="global.html#fetch">fetch</a></li><li><a href="global.html#filter">filter</a></li><li><a href="global.html#gain">gain</a></li><li><a href="global.html#generate">generate</a></li><li><a href="global.html#inst">inst</a></li><li><a href="global.html#lifecycle">lifecycle</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#master">master</a></li><li><a href="global.html#mult">mult</a></li><li><a href="global.html#note">note</a></li><li><a href="global.html#now">now</a></li><li><a href="global.html#osc">osc</a></li><li><a href="global.html#oscBank">oscBank</a></li><li><a href="global.html#perc">perc</a></li><li><a href="global.html#plug">plug</a></li><li><a href="global.html#sample">sample</a></li><li><a href="global.html#samplingRate">samplingRate</a></li><li><a href="global.html#scale">scale</a></li><li><a href="global.html#seconds">seconds</a></li><li><a href="global.html#source">source</a></li><li><a href="global.html#tempo">tempo</a></li><li><a href="global.html#when">when</a></li><li><a href="global.html#white">white</a></li><li><a href="global.html#withNotes">withNotes</a></li><li><a href="global.html#withOptions">withOptions</a></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">core.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import { context, dest } from './context'
+import { isNum, lifecycle, plug } from './utils'
+var slice = Array.prototype.slice
+var isArray = Array.isArray
+
+// ROUTING
+// =======
+
+export function sendTo (dest, node, time, delay) {
+  if (arguments.length > 1) return sendTo(dest)(node, time, delay)
+  return function (node, time, delay) {
+    node.connect(dest)
+    node.start(time, delay)
+    return node
+  }
+}
+
+export var toMaster = sendTo(dest())
+
+/**
+ * Connect nodes in series: A -> B -> C -> D
+ * @param {Array&lt;AudioNode>} nodes - the list of nodes to be connected
+ * @return {AudioNode} the resulting audio node
+ */
+export function connect (nodes) {
+  nodes = isArray(nodes) ? nodes : slice.call(arguments)
+  if (!nodes.length) return null
+  else if (nodes.length === 1) return nodes[0]
+
+  var first = nodes[0]
+  var last = nodes.reduce(function (src, dest) {
+    src.connect(dest)
+    return dest
+  })
+  first.connect = last.connect.bind(last)
+  return lifecycle(first, nodes.slice(1))
+}
+
+/**
+ * Connect nodes in parallel
+ */
+export function add (nodes) {
+  nodes = isArray(nodes) ? nodes : slice.call(arguments)
+  if (!nodes.length) return null
+  else if (nodes.length === 1) return nodes[0]
+
+  var context = nodes[0].context
+  var input = context.createGain()
+  var output = context.createGain()
+  nodes.forEach(function (node) {
+    if (node.numberOfInputs) input.connect(node)
+    node.connect(output)
+  })
+  input.connect = output.connect.bind(output)
+  return lifecycle(input, nodes)
+}
+
+// SIGNALS
+// =======
+
+/**
+ * Create a constant signal
+ * @param {Integer} value - the value of the constant
+ * @return {AudioNode} the audio node
+ */
+export function constant (value, ac) {
+  // TODO: cache buffer
+  var ctx = context(ac)
+  var source = ctx.createBufferSource()
+  source.loop = true
+  source.buffer = ctx.createBuffer(1, 2, ctx.sampleRate)
+  var data = source.buffer.getChannelData(0)
+  data[0] = data[1] = value
+  return source
+}
+
+export function signal (value, ac) {
+  var mod = context(ac).createGain()
+  var signal = connect(constant(value), mod)
+  signal.set = function (value, time) {
+    mod.gain.setValueAtTime(value, time)
+  }
+  return signal.start()
+}
+
+/**
+ * Create a node that bypasses the signal
+ * @param {AudioContext} context - (Optional) the audio context
+ * @return {AudioNode} the bypass audio node
+ */
+export function bypass (ac) {
+  return context(ac).createGain()
+}
+
+/**
+ * Create a gain
+ */
+export function gain (gain, ac) {
+  var amp = context(ac).createGain()
+  return lifecycle(amp, [
+    plug('gain', gain, amp)
+  ])
+}
+
+/**
+ * Multiply a signal
+ */
+export function mult (value, signal) {
+  return connect(signal, gain(value))
+}
+
+/**
+ * Scale a signal
+ */
+export function scale (min, max, source, ctx) {
+  if (source.numberOfInputs) source = connect(constant(1, ctx), source)
+  var delta = max - min
+  return add(constant(min, ctx), mult(delta, source))
+}
+
+// OSCILLATORS
+// ===========
+
+/**
+ * Create an oscillator
+ */
+export function osc (type, frequency, detune, ac) {
+  var osc = context(ac).createOscillator()
+  osc.type = type || 'sine'
+  return lifecycle(osc, [
+    plug('frequency', frequency, osc),
+    plug('detune', detune, osc)
+  ])
+}
+export const sine = osc.bind(null, 'sine')
+export const saw = osc.bind(null, 'sawtooth')
+export const square = osc.bind(null, 'square')
+export const triangle = osc.bind(null, 'triangle')
+
+/**
+ * Create an oscillator bank
+ */
+export function oscBank (base, freqs, gains, types) {
+  var g, src
+  if (!isNum(base)) base = 440
+  if (!isArray(freqs)) freqs = [ 1 ]
+  if (!isArray(gains)) gains = [ 1 ]
+  if (!isArray(types)) types = [ 'sine' ]
+
+  var tl = types.length
+  var gl = gains.length
+  return add(freqs.map(function (freq, i) {
+    src = osc(types[i % tl], base * freq)
+    g = gains[i % gl]
+    return g === 1 ? src : connect(src, gain(g))
+  }))
+}
+
+// FILTERS
+// =======
+
+/**
+ * Create a filter
+ */
+export function filter (type, frequency, Q, detune, ac) {
+  var filter = context(ac).createBiquadFilter()
+  filter.type = type
+  return lifecycle(filter, [
+    plug('frequency', frequency, filter),
+    plug('Q', Q, filter),
+    plug('detune', detune, filter)
+  ])
+}
+export const lowpass = filter.bind(null, 'lowpass')
+export const hipass = filter.bind(null, 'highpass')
+export const bandpass = filter.bind(null, 'hipass')
+
+// MODULATORS
+// ==========
+
+/**
+ * Detune modulator. Can be connected to any `detune` param.
+ * Basically is a boilerplate code
+ * @example
+ * sine(300, detune(200, adshr(0.1, 0.2, 0.5, 1))))
+ * sine(300, detune(50, tempo(20)))
+ */
+export function detune (cents, mod, ac) {
+  if (!isNum(cents)) cents = 50
+  if (isNum(mod)) mod = sine(mod, ac)
+  return mult(cents, mod)
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.2</a> on Fri Oct 28 2016 12:58:38 GMT+0200 (CEST) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>

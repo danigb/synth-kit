@@ -416,7 +416,7 @@
 	/**
 	 * Create a buffer source (sample player)
 	 */
-	function sample (buffer, loop, detune, ac) {
+	function source (buffer, loop, detune, ac) {
 	  var src = context(ac).createBufferSource()
 	  src.buffer = isFn(buffer) ? buffer() : buffer
 	  if (!src.buffer) console.warn('Buffer not ready.')
@@ -436,7 +436,7 @@
 	 * @param {Boolean} reverse - (Optional) true if you want the buffer reversed
 	 * @return {Function} a function with no parameters that returns the desired buffer
 	 */
-	function buffer (generators, samples, reverse, ac) {
+	function generate (generators, samples, reverse, ac) {
 	  return function () {
 	    if (!Array.isArray(generators)) generators = [ generators ]
 	    samples = samples || 0
@@ -469,7 +469,7 @@
 	function white (samples, loop, ac) {
 	  if (!isNum(samples)) samples = samplingRate(ac)
 	  loop = loop !== false
-	  return sample(buffer(whiteGen, samples, false, ac), loop, 0, ac)
+	  return source(generate(whiteGen, samples, false, ac), loop, 0, ac)
 	}
 	function whiteGen () { return Math.random() * 2 - 1 }
 
@@ -699,8 +699,8 @@
 	exports.hipass = hipass;
 	exports.bandpass = bandpass;
 	exports.detune = detune;
-	exports.buffer = buffer;
-	exports.sample = sample;
+	exports.generate = generate;
+	exports.source = source;
 	exports.white = white;
 	exports.adshr = adshr;
 	exports.perc = perc;

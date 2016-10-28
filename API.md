@@ -4,23 +4,27 @@
 <dt><a href="#after">after</a> ⇒ <code>Float</code></dt>
 <dd><p>Get time after n seconds (from now)</p>
 </dd>
+<dt><a href="#master">master</a></dt>
+<dd><p>A master output instrument. You can start nodes with it</p>
+</dd>
 </dl>
 
 ## Functions
 
 <dl>
-<dt><a href="#sample">sample()</a></dt>
-<dd><p>Create a buffer source (sample player)</p>
+<dt><a href="#sample">sample(url, context)</a> ⇒ <code>function</code></dt>
+<dd><p>Get a remote audio sample. You get a function that returns an AudioBuffer
+when loaded or null otherwise. Or you can chain like a promise.</p>
 </dd>
-<dt><a href="#buffer">buffer(generators, samples, reverse)</a> ⇒ <code>function</code></dt>
+<dt><a href="#source">source(buffer, loop, detune, context)</a> ⇒ <code>AudioNode</code></dt>
+<dd><p>Create a buffer source node.</p>
+</dd>
+<dt><a href="#generate">generate(generators, samples, reverse)</a> ⇒ <code>function</code></dt>
 <dd><p>Generate a BufferNode. It returns a no-parameter function that
 returns a buffer. This way, it&#39;s easy to memoize (cache) buffers.</p>
 </dd>
 <dt><a href="#white">white(length, loop, context)</a> ⇒ <code>AudioNode</code></dt>
 <dd><p>White noise source node.</p>
-</dd>
-<dt><a href="#load">load()</a></dt>
-<dd><p>Load a buffer</p>
 </dd>
 <dt><a href="#context">context()</a></dt>
 <dd><p>Get the audio context</p>
@@ -92,6 +96,12 @@ Basically is a boilerplate code</p>
 <dd></dd>
 <dt><a href="#inst">inst()</a></dt>
 <dd></dd>
+<dt><a href="#load">load(url, context)</a> ⇒ <code>Promise.&lt;AudioBuffer&gt;</code></dt>
+<dd><p>Load a remote audio file.</p>
+</dd>
+<dt><a href="#fetch">fetch(url, type)</a> ⇒ <code>Promise</code></dt>
+<dd><p>Fetch url</p>
+</dd>
 <dt><a href="#tempo">tempo(bpm, sub)</a> ⇒ <code>Float</code></dt>
 <dd><p>Convert from beats per minute to hertzs</p>
 </dd>
@@ -125,15 +135,59 @@ Get time after n seconds (from now)
 now() // => 0.785
 after(1) // => 1.785
 ```
+<a name="master"></a>
+
+## master
+A master output instrument. You can start nodes with it
+
+**Kind**: global variable  
+**Example**  
+```js
+master.start(sine(300))
+```
 <a name="sample"></a>
 
-## sample()
-Create a buffer source (sample player)
+## sample(url, context) ⇒ <code>function</code>
+Get a remote audio sample. You get a function that returns an AudioBuffer
+when loaded or null otherwise. Or you can chain like a promise.
 
 **Kind**: global function  
-<a name="buffer"></a>
+**Returns**: <code>function</code> - a function the returns the buffer  
 
-## buffer(generators, samples, reverse) ⇒ <code>function</code>
+| Param | Type | Description |
+| --- | --- | --- |
+| url | <code>String</code> | the url of the file |
+| context | <code>AudioContext</code> | (Optional) the audio context |
+
+**Example**  
+```js
+source(sample('server.com/audio-file.mp3')).start()
+```
+**Example**  
+```js
+// use the Promise like interface
+sample('audio-file.mp3').then(function (buffer) {
+    source(buffer).start()
+})
+```
+<a name="source"></a>
+
+## source(buffer, loop, detune, context) ⇒ <code>AudioNode</code>
+Create a buffer source node.
+
+**Kind**: global function  
+**Returns**: <code>AudioNode</code> - BufferSourceNode  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| buffer | <code>Buffer</code> &#124; <code>function</code> | the buffer (or a function that returns a buffer) |
+| loop | <code>Boolean</code> | (Optional) loop the buffer or not (defaults to false) |
+| detune | <code>Integer</code> &#124; <code>Node</code> | (Optional) the detune value or modulator |
+| context | <code>AudioContext</code> | (Optional) the audio context |
+
+<a name="generate"></a>
+
+## generate(generators, samples, reverse) ⇒ <code>function</code>
 Generate a BufferNode. It returns a no-parameter function that
 returns a buffer. This way, it's easy to memoize (cache) buffers.
 
@@ -164,12 +218,6 @@ White noise source node.
 ```js
 connect(white(seconds(1)), perc(), dest()).start()
 ```
-<a name="load"></a>
-
-## load()
-Load a buffer
-
-**Kind**: global function  
 <a name="context"></a>
 
 ## context()
@@ -405,6 +453,32 @@ master.start(sine(300))
 master.start(sine(400))
 master.stopAll()
 ```
+<a name="load"></a>
+
+## load(url, context) ⇒ <code>Promise.&lt;AudioBuffer&gt;</code>
+Load a remote audio file.
+
+**Kind**: global function  
+**Returns**: <code>Promise.&lt;AudioBuffer&gt;</code> - a promise that resolves to an AudioBuffer  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| url | <code>String</code> |  |
+| context | <code>AudioContext</code> | (Optional) |
+
+<a name="fetch"></a>
+
+## fetch(url, type) ⇒ <code>Promise</code>
+Fetch url
+
+**Kind**: global function  
+**Returns**: <code>Promise</code> - a promise to the result  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| url | <code>String</code> | the url |
+| type | <code>String</code> | can be 'text' or 'arraybuffer' |
+
 <a name="tempo"></a>
 
 ## tempo(bpm, sub) ⇒ <code>Float</code>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>utils.js - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#add">add</a></li><li><a href="global.html#adshr">adshr</a></li><li><a href="global.html#after">after</a></li><li><a href="global.html#bypass">bypass</a></li><li><a href="global.html#connect">connect</a></li><li><a href="global.html#constant">constant</a></li><li><a href="global.html#context">context</a></li><li><a href="global.html#contextOf">contextOf</a></li><li><a href="global.html#dest">dest</a></li><li><a href="global.html#detune">detune</a></li><li><a href="global.html#feedback">feedback</a></li><li><a href="global.html#fetch">fetch</a></li><li><a href="global.html#filter">filter</a></li><li><a href="global.html#gain">gain</a></li><li><a href="global.html#generate">generate</a></li><li><a href="global.html#inst">inst</a></li><li><a href="global.html#lifecycle">lifecycle</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#master">master</a></li><li><a href="global.html#mult">mult</a></li><li><a href="global.html#note">note</a></li><li><a href="global.html#now">now</a></li><li><a href="global.html#osc">osc</a></li><li><a href="global.html#oscBank">oscBank</a></li><li><a href="global.html#perc">perc</a></li><li><a href="global.html#plug">plug</a></li><li><a href="global.html#sample">sample</a></li><li><a href="global.html#samplingRate">samplingRate</a></li><li><a href="global.html#scale">scale</a></li><li><a href="global.html#seconds">seconds</a></li><li><a href="global.html#source">source</a></li><li><a href="global.html#tempo">tempo</a></li><li><a href="global.html#when">when</a></li><li><a href="global.html#white">white</a></li><li><a href="global.html#withNotes">withNotes</a></li><li><a href="global.html#withOptions">withOptions</a></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">utils.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>export function isNum (n) { return typeof n === 'number' }
+export function isFn (x) { return typeof x === 'function' }
+export function isStr (x) { return typeof x === 'string' }
+export function isObj (x) { return typeof x === 'object' }
+
+// CONVERSION
+// ==========
+
+/**
+ * Plug something (a value, a node) into a node parameter
+ */
+export function plug (name, value, node) {
+  if (typeof value === 'undefined') {
+    // do nothing
+  } else if (typeof value.connect === 'function') {
+    node[name].value = 0
+    value.connect(node[name])
+    return value
+  } else if (node[name]) {
+    node[name].value = value
+  }
+}
+
+// TODO: export?
+// Get time for a given `when` and  `delay` parameters
+export function toTime (context, when, delay) {
+  return Math.max(context.currentTime, when || 0) + (delay || 0)
+}
+
+function bindLifecycle (node) {
+  return {
+    connect: node.connect ? node.connect.bind(node) : null,
+    disconnect: node.disconnect ? node.disconnect.bind(node) : null,
+    start: node.start ? node.start.bind(node) : null,
+    stop: node.stop ? node.stop.bind(node) : null
+  }
+}
+
+function dispatch (event, value, node, dependents) {
+  if (node[event]) node[event](value)
+  dependents.forEach(function (dep) {
+    if (dep &amp;&amp; dep[event]) dep[event](value)
+  })
+  return node
+}
+
+/**
+ * Override node functions to handle better the node's lifecycle
+ */
+export function lifecycle (node, dependents) {
+  // TODO: possible optimization: if dependents is empty, no need to decorate
+  var raw = bindLifecycle(node)
+
+  node.connected = false
+  node.disconnect = function () {
+    node.connected = false
+    dispatch('disconnect', null, raw, dependents)
+  }
+  node.start = function (when, delay, duration) {
+    var time = toTime(node.context, when, delay)
+    // if (!node.connected) node.connect(node.context.destination)
+    dispatch('start', time, raw, dependents)
+    if (duration) node.stop(time + duration)
+    return node
+  }
+  node.stop = function (when, delay) {
+    var time = toTime(node.context, when, delay)
+    dispatch('stop', time, raw, dependents)
+  }
+  return node
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.2</a> on Fri Oct 28 2016 12:58:38 GMT+0200 (CEST) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>

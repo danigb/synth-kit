@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Home - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#add">add</a></li><li><a href="global.html#adshr">adshr</a></li><li><a href="global.html#after">after</a></li><li><a href="global.html#bypass">bypass</a></li><li><a href="global.html#connect">connect</a></li><li><a href="global.html#constant">constant</a></li><li><a href="global.html#context">context</a></li><li><a href="global.html#contextOf">contextOf</a></li><li><a href="global.html#dest">dest</a></li><li><a href="global.html#detune">detune</a></li><li><a href="global.html#feedback">feedback</a></li><li><a href="global.html#fetch">fetch</a></li><li><a href="global.html#filter">filter</a></li><li><a href="global.html#gain">gain</a></li><li><a href="global.html#generate">generate</a></li><li><a href="global.html#inst">inst</a></li><li><a href="global.html#lifecycle">lifecycle</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#master">master</a></li><li><a href="global.html#mult">mult</a></li><li><a href="global.html#note">note</a></li><li><a href="global.html#now">now</a></li><li><a href="global.html#osc">osc</a></li><li><a href="global.html#oscBank">oscBank</a></li><li><a href="global.html#perc">perc</a></li><li><a href="global.html#plug">plug</a></li><li><a href="global.html#sample">sample</a></li><li><a href="global.html#samplingRate">samplingRate</a></li><li><a href="global.html#scale">scale</a></li><li><a href="global.html#seconds">seconds</a></li><li><a href="global.html#source">source</a></li><li><a href="global.html#tempo">tempo</a></li><li><a href="global.html#when">when</a></li><li><a href="global.html#white">white</a></li><li><a href="global.html#withNotes">withNotes</a></li><li><a href="global.html#withOptions">withOptions</a></li></ul>
+</nav>
+
+<div id="main">
+    
+
+    
+
+
+
+    
+
+
+
+
+
+
+
+
+
+    
+
+
+    <section class="readme">
+        <article><h1>SynthKit</h1><p><img src="https://img.shields.io/badge/stability-experimental-red.svg?style=flat-square" alt="stability"></p>
+<blockquote>
+<p>A (web audio) synth construction kit</p>
+</blockquote>
+<p><code>synth-kit</code> is a little collection of functions to make Web Audio API more enjoyable. Some examples:</p>
+<pre class="prettyprint source lang-js"><code>import { connect, add, sine, saw, lowpass, gain, adsr } from 'synth-kit'
+
+sine(440).start()
+connect(saw(1200), lowpass(500), adsr()).start()
+add(sine(800), connect(sine(1600), gain(0.5))).start()</code></pre><h2>Usage</h2><h4>Oscillators</h4><p>The <code>osc(type, freq, detune)</code> function creates an OscillatorNode:</p>
+<pre class="prettyprint source lang-js"><code>osc('sawtooth', 880).start()</code></pre><p>You can use any of its aliases: <code>sine</code>, <code>saw</code>, <code>triangle</code> or <code>square</code>:</p>
+<pre class="prettyprint source lang-js"><code>sine(440).start()</code></pre><h4>Buffers and BufferSources</h4><p>You can load a buffer with <code>load(url)</code> and play it with <code>sample(buffer, loop, detune)</code>:</p>
+<pre class="prettyprint source lang-js"><code>var buffer = load('http://myserver.com/samples/kick.mp3')
+sample(buffer).start()</code></pre><p>Notice that <code>load</code> will return a <em>function that creates a buffer</em> (although you can pass it directly to the <code>sample</code> function as a buffer parameter). This is because the function returned from load will in turn return an empty buffer until the sound is loaded.</p>
+<p>You can use the <code>loadAll(baseUrl, names, ext)</code> to load more than a buffer:</p>
+<pre class="prettyprint source lang-js"><code>var buffers = loadAll('https://danigb.github.io/sampled/MRK-2/samples', ['snare', 'kick', 'block'], '.wav')
+sample(buffers['kick']).start()</code></pre><p>As you can see by the examples, this is fully compatible with <a href="https://github.com/danigb/sampled">sampled</a> repository.</p>
+<h4>Gain and Filters</h4><p>You can use the <code>gain(amount)</code> function to create a GainNode:</p>
+<pre class="prettyprint source lang-js"><code>sine(300).connect(gain(0.2)).start()</code></pre><p>BiquadFilterNodes are created using <code>filter(type, freq, Q, detune)</code> function (or any of its aliases: <code>lowpass</code>, <code>hipass</code> and <code>bandpass</code>):</p>
+<pre class="prettyprint source lang-js"><code>saw(440).connect(lowpass(200)).start()</code></pre><h4>Routing</h4><p>Routing audio nodes unsing <code>connect</code> function is cumbersome, error prone and makes hard to understand the signal flow.</p>
+<p>Normally you will want to route nodes in series using the <code>connect(...nodes)</code> function:</p>
+<pre class="prettyprint source lang-js"><code>connect(sine(440), gain(0.5))</code></pre><p>Or route them in parrallel using the <code>add(...nodes)</code> function:</p>
+<pre class="prettyprint source lang-js"><code>add(sine(440), sine(880))</code></pre><p>These two functions can be combined in any complex way:</p>
+<pre class="prettyprint source lang-js"><code>connect(
+  add(
+    saw(440),
+    connect(saw(442), gain(0.4))
+  ), lowpass(350), adsr())</code></pre><h4>Modulation</h4><p>You can pass a node to any audio parameter value to create modulations. For example, you can modulate the <code>detune</code> parameter of an oscillator with another oscillator to create a vibrato effect:</p>
+<pre class="prettyprint source lang-js"><code>// the second argument is the sine detune parameter
+sine(440, mul(50, sine(10))).start()
+// Although there is an utility function for that:
+sine(440, detune(50, 10)).start()</code></pre><p>Or, for example, you can modulate a <code>gain</code> to create a tremolo effect:</p>
+<pre class="prettyprint source lang-js"><code>connect(saw(440), gain(sine(15))).start()
+// and there's also a function for that:
+connect(saw(440), tremolo(15)).start()</code></pre><h4>Reusing</h4><p>Since OscillatorNodes and BufferSourceNodes are <em>single-shot</em> usage, you can't call <code>start</code> twice on the same object:</p>
+<pre class="prettyprint source lang-js"><code>var synth = connect(saw(300), adsr())
+o.start()
+o.start() // error</code></pre><p>The way to solve this limitation is by wrapping the synth definition in a function:</p>
+<pre class="prettyprint source lang-js"><code>// a one oscillator synth
+function mono (freq) {
+  return connect(saw(freq), adsr())
+}
+mono(440).start()
+mono(880).start()</code></pre><p>Again, those can be composed in larger structures:</p>
+<pre class="prettyprint source lang-js"><code>// a two oscillator synth
+function duo (freq) {
+  return add(mono(freq), mono(freq * 2.05))
+}
+duo(440).start()
+duo(note('C4')).start()</code></pre><h4>Envelopes</h4><h4>Effects</h4><h4>Conversion and utility functions</h4><p>SynthKit uses frequencies in hertzs to represent pitches, linear gain values to represent amplitudes and number of samples to represent buffer lengths. But sometimes you want to provide those using different units. Here are some conversion utilities:</p>
+<ul>
+<li><code>tempo(bpm, subdivision)</code>: convert from beats per minute to hertzs</li>
+<li><code>note(name or midi)</code>: convert a note name or note midi number to its frequency</li>
+<li><code>db(num)</code>: convert from decibels to gain value</li>
+<li><code>level(num)</code>: convert from level (0 to 100 in logaritmic scale) to gain value</li>
+<li><code>secs(num)</code>: convert from seconds to number of samples</li>
+</ul>
+<h2>Livecoding in the browser</h2><p>Setup <code>synth-kit</code> for live coding it's easy. Add the [distribution file] to you page:</p>
+<p>And then:</p>
+<pre class="prettyprint source lang-js"><code>SynthKit.live() // => export all `synth-kit` functions to the global environment
+sine(note('A4')).start()</code></pre><h2>Test and examples</h2><p>To view some examples open: <code>example/index.html</code></p>
+<h2>Inspiration and references</h2><ul>
+<li>The idea and API organization is taken from cljs-bach: https://github.com/ctford/cljs-bach Thanks ctford!</li>
+<li>Of course, the synth secrets tutorial was the beginning of all: https://github.com/micjamking/synth-secrets (that's a easy to read version). Thanks Gordon Reid</li>
+<li>Vincent made some nice 808 drum synsthesis: https://github.com/vincentriemer/io-808</li>
+<li>Percussion synthesis tutorial: http://www.cim.mcgill.ca/~clark/nordmodularbook/nm_percussion.html</li>
+<li>Sound Design in Web Audio its an awesome two part blog post: http://nickwritesablog.com/sound-design-in-web-audio-neurofunk-bass-part-1/ and http://nickwritesablog.com/sound-design-in-web-audio-neurofunk-bass-part-2/</li>
+<li>There are a lot of resources about synthesis, here is a nice one: https://www.gearslutz.com/board/electronic-music-instruments-electronic-music-production/460283-how-do-you-synthesize-808-ish-drums.html</li>
+</ul>
+<h2>License</h2><p>MIT License</p></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.2</a> on Fri Oct 28 2016 12:58:38 GMT+0200 (CEST) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>
