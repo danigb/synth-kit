@@ -1,3 +1,5 @@
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function (global){
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
 	typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -1153,3 +1155,628 @@ exports.withOptions = withOptions;
 Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],2:[function(require,module,exports){
+// https://teichman.org/blog/2011/05/roto.html
+// http://electricdruid.net/technical-aspects-of-the-hammond-organ/
+// http://www.dairiki.org/HammondWiki/OriginalHammondLeslieFaq
+// http://www.stefanv.com/electronics/hammond_drawbar_science.html
+var _ = require('..')
+
+// http://electricdruid.net/technical-aspects-of-the-hammond-organ/
+var RATIOS = [0.5, 1.498823530, 1, 2, 2.997647060, 4, 5.040941178, 5.995294120, 8]
+
+/**
+ * Create a poor man's hammond-like sound
+ */
+function b3 (preset, frequency) {
+  if (typeof preset === 'string') preset = b3.presets[preset] || b3.parse(preset)
+  else if (!Array.isArray(preset)) throw Error('Not valid B3 registration', preset)
+  var osc = drawbars(preset)
+  return frequency ? osc(frequency) : osc
+}
+
+b3.parse = function (str) {
+  return (str.replace(/[^12345678]/g, '') + '00000000').slice(0, 9).split('').map(Math.abs)
+}
+
+// http://www.dairiki.org/HammondWiki/PopularDrawbarRegistrations
+b3.presets = {
+  gospel: b3.parse('88 8000 008'),
+  blues: b3.parse('88 8800 000'),
+  bluesB: b3.parse('88 5324 588'),
+  booker: b3.parse('88 8630 000'),
+  onions: b3.parse('80 8800 008'),
+  smith: b3.parse('88 8000 000'),
+  mcgriff: b3.parse('86 8600 006'),
+  errol: b3.parse('80 0008 888'),
+  genesis: b3.parse('33 6866 330')
+}
+
+function drawbars (preset) {
+  var gains = null // lazy
+  return function (frequency) {
+    gains = gains || preset.map(function (n) {
+      return _.dB(-3 * (8 - n))
+    })
+    return _.oscBank(frequency, RATIOS, ['sine'], gains)
+  }
+}
+
+module.exports = b3
+
+},{"..":1}],3:[function(require,module,exports){
+module.exports={
+  "Piano": [
+    "Acoustic Grand Piano",
+    "Bright Acoustic Piano",
+    "Electric Grand Piano",
+    "Electric Piano 1",
+    "Electric Piano 2",
+    "Clavichord",
+    "Harpsichord",
+    "Honkytonk Piano"
+  ],
+  "Organ": [
+    "Church Organ",
+    "Drawbar Organ",
+    "Reed Organ",
+    "Rock Organ",
+    "Percussive Organ"
+  ],
+  "Guitar": [
+    "Acoustic Guitar Nylon",
+    "Acoustic Guitar Steel",
+    "Electric Guitar Clean",
+    "Electric Guitar Jazz",
+    "Electric Guitar Muted",
+    "Distortion Guitar",
+    "Guitar Fret Noise",
+    "Guitar Harmonics",
+    "Overdriven Guitar"
+  ],
+  "Bass": [
+    "Acoustic Bass",
+    "Electric Bass Finger",
+    "Electric Bass Pick",
+    "Contrabass",
+    "Fretless Bass",
+    "Synth Bass 1",
+    "Synth Bass 2",
+    "Slap Bass 1",
+    "Slap Bass 2"
+  ],
+  "Strings": [
+    "Cello",
+    "Viola",
+    "Violin",
+    "Tremolo Strings",
+    "Pizzicato Strings",
+    "Synthstrings 1",
+    "Synthstrings 2"
+  ],
+  "Reed": [
+    "Soprano Sax",
+    "Alto Sax",
+    "Tenor Sax",
+    "Baritone Sax",
+    "Bassoon",
+    "Clarinet",
+    "Oboe"
+  ],
+  "Brass": [
+    "Brass Section",
+    "English Horn",
+    "French Horn",
+    "Muted Trumpet",
+    "Trombone",
+    "Trumpet",
+    "Tuba",
+    "Synthbrass 1",
+    "Synthbrass 2"
+  ],
+  "Ensemble": [
+    "Choir Aahs",
+    "Orchestra Hit",
+    "Orchestral Harp",
+    "String Ensemble 1",
+    "String Ensemble 2"
+  ],
+  "Pipe": [
+    "Flute",
+    "Ocarina",
+    "Pan Flute",
+    "Piccolo",
+    "Recorder",
+    "Whistle"
+  ],
+  "World": [
+    "Accordion",
+    "Tango Accordion",
+    "Bag Pipe",
+    "Banjo",
+    "Fiddle",
+    "Harmonica",
+    "Kalimba",
+    "Koto",
+    "Shakuhachi",
+    "Shamisen",
+    "Shanai",
+    "Sitar"
+  ],
+  "Chromatic Percussion": [
+    "Celesta",
+    "Dulcimer",
+    "Glockenspiel",
+    "Marimba",
+    "Music Box",
+    "Xylophone",
+    "Tubular Bells",
+    "Vibraphone",
+    "Steel Drums",
+    "Tinkle Bell"
+  ],
+  "Percussion": [
+    "Agogo",
+    "Melodic Tom",
+    "Woodblock",
+    "Reverse Cymbal",
+    "Timpani",
+    "Synth Drum",
+    "Taiko Drum"
+  ],
+  "Synth Lead": [
+    "Lead 1 Square",
+    "Lead 2 Sawtooth",
+    "Lead 3 Calliope",
+    "Lead 4 Chiff",
+    "Lead 5 Charang",
+    "Lead 6 Voice",
+    "Lead 7 Fifths",
+    "Lead 8 Bass Lead"
+  ],
+  "Synth Pad": [
+    "Pad 1 New Age",
+    "Pad 2 Warm",
+    "Pad 3 Polysynth",
+    "Pad 4 Choir",
+    "Pad 5 Bowed",
+    "Pad 6 Metallic",
+    "Pad 7 Halo",
+    "Pad 8 Sweep"
+  ],
+  "Sound Effects": [
+    "Applause",
+    "Bird Tweet",
+    "Blown Bottle",
+    "Breath Noise",
+    "Gunshot",
+    "Fx 1 Rain",
+    "Fx 2 Soundtrack",
+    "Fx 3 Crystal",
+    "Fx 4 Atmosphere",
+    "Fx 5 Brightness",
+    "Fx 6 Goblins",
+    "Fx 7 Echoes",
+    "Fx 8 Scifi",
+    "Helicopter",
+    "Seashore",
+    "Synth Voice",
+    "Telephone Ring",
+    "Voice Oohs"
+  ]
+}
+
+},{}],4:[function(require,module,exports){
+var _ = require('..')
+var Note = require('note-parser')
+function is (t, x) { return typeof x === t }
+
+var GLEITZ = 'https://gleitz.github.io/midi-js-soundfonts/'
+function isSoundfontURL (name) { return /\.js(\?.*)?$/i.test(name) }
+/**
+ * Get the url of a soundfont name
+ */
+function url (name, sf, format) {
+  if (isSoundfontURL(name)) return name
+  format = format === 'ogg' ? '-ogg' : '-mp3'
+  sf = sf === 'FluidR3_GM' ? 'FluidR3_GM/' : 'MusyngKite/'
+  return GLEITZ + sf + name.toLowerCase().replace(/\s+/g, '_') + format + '.js'
+}
+
+var LOAD_DEFAULTS = {
+  format: 'mp3', soundfont: 'MusyngKite',
+  fetch: _.fetch, decodeAudio: _.decodeAudio
+}
+
+/**
+ * Load a MIDI.js prerendered soundfont file.
+ * load('Acoustic Grand Piano').then(function (buffers) {
+ *  buffer[60] // => <AudioBuffer> for midi note 60 ('C4')
+})
+ */
+function load (name, options) {
+  var o = Object.assign({}, options, LOAD_DEFAULTS)
+  var promise = is('function', name.then) ? name
+    : o.fetch(url(name, o.soundfont, o.format), 'text')
+  return promise.then(decodeSoundfont(o.context, o.decodeAudio))
+}
+
+var INST_DEFAULTS = {
+  gain: 1, filter: { type: 'lowpass', frequency: '22000' },
+  attack: 0.01, decay: 0.1, sustain: 0.8, release: 0.4
+}
+
+/**
+ * Create a soundfont instrument.
+ * The configuration object can contain the following options:
+ * @param {String} name - the soundfont name
+ * @param {Object} options - (Optional) soundfont options
+ * @return {Instrument} the soundfont instrument
+ * @example
+ * var piano = Soundfont.instrument('Acoustic Grand Piano', { gain: 1.5 })
+ * piano.on('ready', function () {
+ *    piano.start('C4')
+ * })
+ */
+function instrument (name, config) {
+  var buffers = null
+  var sample = function (midi) {
+    if (buffers) return buffers[midi]
+    console.warn('Instrument "' + name + '" not loaded yet.')
+    return _.generate(function () { return 0 }, 2)
+  }
+  var synth = function (o) {
+    return _.connect(
+      _.source(sample(o.midi), o.loop, o.detune),
+      _.filter(o.filter.type, o.filter.freq),
+      /* adsr(o), */
+      _.gain(o.gain)
+    )
+  }
+  var instOpts = Object.assign({}, INST_DEFAULTS, config)
+  synth = _.withOptions(synth, { defaults: instOpts, toOptions: prepareOptions })
+  var sf = _.inst(synth, _.dest())
+  load(name, config).then(function (result) {
+    buffers = result
+    sf.trigger('ready', sf, name)
+  })
+  return sf
+}
+
+function prepareOptions (o) {
+  if (!o) o = {}
+  else if (is('number', o)) o = { midi: o }
+  else if (!is('object', o)) o = { name: o }
+
+  var note = Note.parse(o.name || o.note)
+  if (!o.note && note) o.note = Note.build(note)
+  if (!o.midi && note) o.midi = note.midi
+  if (!o.frequency && o.midi) o.frequency = Math.pow(2, (o.midi - 69) / 12) * 440
+  if (!o.detune) {
+    o.detune = Math.floor((o.midi % 1) * 100)
+    if (o.detune) o.midi = Math.floor(o.midi)
+  }
+  return o
+}
+
+/**
+ * Decode a soundfont text into a map of midi notes to audio buffers.
+ * Can be partially applied.
+ *
+ * @param {AudioContext} - the audio context (or null to use the default context)
+ * @param {String} content - the midi.js encoded soundfont text
+ */
+function decodeSoundfont (ac, decodeAudio) {
+  var ctx = _.context(ac)
+  return function (content) {
+    var sf = parseMidijs(content)
+    var names = Object.keys(sf)
+    var promises = names.map(function (name) {
+      return Promise.resolve(sf[name]).then(decodeBase64Audio).then(decodeAudio(ctx))
+    })
+    return Promise.all(promises).then(function (bufferList) {
+      return names.reduce(function (buffers, name, i) {
+        buffers[Note.midi(name)] = bufferList[i]
+        return buffers
+      }, {})
+    })
+  }
+}
+
+function parseMidijs (data) {
+  var begin = data.indexOf('MIDI.Soundfont.')
+  if (begin < 0) throw Error('Invalid MIDI.js Soundfont format')
+  begin = data.indexOf('=', begin) + 2
+  var end = data.lastIndexOf(',')
+  return JSON.parse(data.slice(begin, end) + '}')
+}
+
+function decodeBase64Audio (source) {
+  var i = source.indexOf(',')
+  return base64Decode(source.slice(i + 1)).buffer
+}
+
+// DECODE UTILITIES
+function b64ToUint6 (nChr) {
+  return nChr > 64 && nChr < 91 ? nChr - 65
+    : nChr > 96 && nChr < 123 ? nChr - 71
+    : nChr > 47 && nChr < 58 ? nChr + 4
+    : nChr === 43 ? 62
+    : nChr === 47 ? 63
+    : 0
+}
+
+// Decode Base64 to Uint8Array
+// ---------------------------
+function base64Decode (sBase64, nBlocksSize) {
+  var sB64Enc = sBase64.replace(/[^A-Za-z0-9\+\/]/g, '')
+  var nInLen = sB64Enc.length
+  var nOutLen = nBlocksSize
+    ? Math.ceil((nInLen * 3 + 1 >> 2) / nBlocksSize) * nBlocksSize
+    : nInLen * 3 + 1 >> 2
+  var taBytes = new Uint8Array(nOutLen)
+
+  for (var nMod3, nMod4, nUint24 = 0, nOutIdx = 0, nInIdx = 0; nInIdx < nInLen; nInIdx++) {
+    nMod4 = nInIdx & 3
+    nUint24 |= b64ToUint6(sB64Enc.charCodeAt(nInIdx)) << 18 - 6 * nMod4
+    if (nMod4 === 3 || nInLen - nInIdx === 1) {
+      for (nMod3 = 0; nMod3 < 3 && nOutIdx < nOutLen; nMod3++, nOutIdx++) {
+        taBytes[nOutIdx] = nUint24 >>> (16 >>> nMod3 & 24) & 255
+      }
+      nUint24 = 0
+    }
+  }
+  return taBytes
+}
+
+module.exports = { url: url, load: load, instrument: instrument }
+
+},{"..":1,"note-parser":7}],5:[function(require,module,exports){
+var _ = require('..')
+
+function snare () {
+  return _.connect(_.white(), _.perc())
+}
+
+module.exports = {
+  snare: snare
+}
+
+},{"..":1}],6:[function(require,module,exports){
+var SynthKit = require('.')
+SynthKit.start = SynthKit.master.start
+SynthKit.stop = SynthKit.master.stop
+
+SynthKit.b3 = require('./instruments/b3')
+SynthKit.sf = require('./instruments/soundfont').instrument
+SynthKit.tr808 = require('./instruments/tr808')
+var sfnames = require('./instruments/sf-names.json')
+
+SynthKit.sf.names = function (group, num) {
+  return !group ? Object.keys(sfnames)
+    : num ? sfnames[group][num - 1] : sfnames[group]
+}
+SynthKit.sf.search = function (str) {
+  str = str.toLowerCase()
+  var results = []
+  Object.keys(sfnames).forEach(function (group) {
+    sfnames[group].forEach(function (name) {
+      if (name.toLowerCase().includes(str)) results.push(name)
+    })
+  })
+  return results
+}
+SynthKit.live = function () {
+  var names = []
+  Object.keys(SynthKit).forEach(function (name) {
+    window[name] = SynthKit[name]
+    names.push(name)
+  })
+  console.log('SynthKit live', 10, names.length)
+  console.log(names.join(', '))
+}
+
+module.exports = SynthKit
+
+},{".":1,"./instruments/b3":2,"./instruments/sf-names.json":3,"./instruments/soundfont":4,"./instruments/tr808":5}],7:[function(require,module,exports){
+'use strict'
+
+// util
+function fillStr (s, num) { return Array(num + 1).join(s) }
+function isNum (x) { return typeof x === 'number' }
+function isStr (x) { return typeof x === 'string' }
+function isDef (x) { return typeof x !== 'undefined' }
+function midiToFreq (midi, tuning) {
+  return Math.pow(2, (midi - 69) / 12) * (tuning || 440)
+}
+
+var REGEX = /^([a-gA-G])(#{1,}|b{1,}|x{1,}|)(-?\d*)\s*(.*)\s*$/
+/**
+ * A regex for matching note strings in scientific notation.
+ *
+ * @name regex
+ * @function
+ * @return {RegExp} the regexp used to parse the note name
+ *
+ * The note string should have the form `letter[accidentals][octave][element]`
+ * where:
+ *
+ * - letter: (Required) is a letter from A to G either upper or lower case
+ * - accidentals: (Optional) can be one or more `b` (flats), `#` (sharps) or `x` (double sharps).
+ * They can NOT be mixed.
+ * - octave: (Optional) a positive or negative integer
+ * - element: (Optional) additionally anything after the duration is considered to
+ * be the element name (for example: 'C2 dorian')
+ *
+ * The executed regex contains (by array index):
+ *
+ * - 0: the complete string
+ * - 1: the note letter
+ * - 2: the optional accidentals
+ * - 3: the optional octave
+ * - 4: the rest of the string (trimmed)
+ *
+ * @example
+ * var parser = require('note-parser')
+ * parser.regex.exec('c#4')
+ * // => ['c#4', 'c', '#', '4', '']
+ * parser.regex.exec('c#4 major')
+ * // => ['c#4major', 'c', '#', '4', 'major']
+ * parser.regex().exec('CMaj7')
+ * // => ['CMaj7', 'C', '', '', 'Maj7']
+ */
+function regex () { return REGEX }
+
+var SEMITONES = [0, 2, 4, 5, 7, 9, 11]
+/**
+ * Parse a note name in scientific notation an return it's components,
+ * and some numeric properties including midi number and frequency.
+ *
+ * @name parse
+ * @function
+ * @param {String} note - the note string to be parsed
+ * @param {Boolean} isTonic - true the strings it's supposed to contain a note number
+ * and some category (for example an scale: 'C# major'). It's false by default,
+ * but when true, en extra tonicOf property is returned with the category ('major')
+ * @param {Float} tunning - The frequency of A4 note to calculate frequencies.
+ * By default it 440.
+ * @return {Object} the parsed note name or null if not a valid note
+ *
+ * The parsed note name object will ALWAYS contains:
+ * - letter: the uppercase letter of the note
+ * - acc: the accidentals of the note (only sharps or flats)
+ * - pc: the pitch class (letter + acc)
+ * - step: s a numeric representation of the letter. It's an integer from 0 to 6
+ * where 0 = C, 1 = D ... 6 = B
+ * - alt: a numeric representation of the accidentals. 0 means no alteration,
+ * positive numbers are for sharps and negative for flats
+ * - chroma: a numeric representation of the pitch class. It's like midi for
+ * pitch classes. 0 = C, 1 = C#, 2 = D ... 11 = B. Can be used to find enharmonics
+ * since, for example, chroma of 'Cb' and 'B' are both 11
+ *
+ * If the note has octave, the parser object will contain:
+ * - oct: the octave number (as integer)
+ * - midi: the midi number
+ * - freq: the frequency (using tuning parameter as base)
+ *
+ * If the parameter `isTonic` is set to true, the parsed object will contain:
+ * - tonicOf: the rest of the string that follows note name (left and right trimmed)
+ *
+ * @example
+ * var parse = require('note-parser').parse
+ * parse('Cb4')
+ * // => { letter: 'C', acc: 'b', pc: 'Cb', step: 0, alt: -1, chroma: -1,
+ *         oct: 4, midi: 59, freq: 246.94165062806206 }
+ * // if no octave, no midi, no freq
+ * parse('fx')
+ * // => { letter: 'F', acc: '##', pc: 'F##', step: 3, alt: 2, chroma: 7 })
+ */
+function parse (str, isTonic, tuning) {
+  if (typeof str !== 'string') return null
+  var m = REGEX.exec(str)
+  if (!m || !isTonic && m[4]) return null
+
+  var p = { letter: m[1].toUpperCase(), acc: m[2].replace(/x/g, '##') }
+  p.pc = p.letter + p.acc
+  p.step = (p.letter.charCodeAt(0) + 3) % 7
+  p.alt = p.acc[0] === 'b' ? -p.acc.length : p.acc.length
+  var pos = SEMITONES[p.step] + p.alt
+  p.chroma = pos < 0 ? 12 + pos : pos % 12
+  if (m[3]) { // has octave
+    p.oct = +m[3]
+    p.midi = pos + 12 * (p.oct + 1)
+    p.freq = midiToFreq(p.midi, tuning)
+  }
+  if (isTonic) p.tonicOf = m[4]
+  return p
+}
+
+var LETTERS = 'CDEFGAB'
+function acc (n) { return !isNum(n) ? '' : n < 0 ? fillStr('b', -n) : fillStr('#', n) }
+function oct (n) { return !isNum(n) ? '' : '' + n }
+
+/**
+ * Create a string from a parsed object or `step, alteration, octave` parameters
+ * @param {Object} obj - the parsed data object
+ * @return {String} a note string or null if not valid parameters
+ * @since 1.2
+ * @example
+ * parser.build(parser.parse('cb2')) // => 'Cb2'
+ *
+ * @example
+ * // it accepts (step, alteration, octave) parameters:
+ * parser.build(3) // => 'F'
+ * parser.build(3, -1) // => 'Fb'
+ * parser.build(3, -1, 4) // => 'Fb4'
+ */
+function build (s, a, o) {
+  if (s === null || typeof s === 'undefined') return null
+  if (s.step) return build(s.step, s.alt, s.oct)
+  if (s < 0 || s > 6) return null
+  return LETTERS.charAt(s) + acc(a) + oct(o)
+}
+
+/**
+ * Get midi of a note
+ *
+ * @name midi
+ * @function
+ * @param {String|Integer} note - the note name or midi number
+ * @return {Integer} the midi number of the note or null if not a valid note
+ * or the note does NOT contains octave
+ * @example
+ * var parser = require('note-parser')
+ * parser.midi('A4') // => 69
+ * parser.midi('A') // => null
+ * @example
+ * // midi numbers are bypassed (even as strings)
+ * parser.midi(60) // => 60
+ * parser.midi('60') // => 60
+ */
+function midi (note) {
+  if ((isNum(note) || isStr(note)) && note >= 0 && note < 128) return +note
+  var p = parse(note)
+  return p && isDef(p.midi) ? p.midi : null
+}
+
+/**
+ * Get freq of a note in hertzs (in a well tempered 440Hz A4)
+ *
+ * @name freq
+ * @function
+ * @param {String} note - the note name or note midi number
+ * @param {String} tuning - (Optional) the A4 frequency (440 by default)
+ * @return {Float} the freq of the number if hertzs or null if not valid note
+ * @example
+ * var parser = require('note-parser')
+ * parser.freq('A4') // => 440
+ * parser.freq('A') // => null
+ * @example
+ * // can change tuning (440 by default)
+ * parser.freq('A4', 444) // => 444
+ * parser.freq('A3', 444) // => 222
+ * @example
+ * // it accepts midi numbers (as numbers and as strings)
+ * parser.freq(69) // => 440
+ * parser.freq('69', 442) // => 442
+ */
+function freq (note, tuning) {
+  var m = midi(note)
+  return m === null ? null : midiToFreq(m, tuning)
+}
+
+var parser = { parse: parse, build: build, regex: regex, midi: midi, freq: freq }
+// add additional functions, one for each object property
+var FNS = ['letter', 'acc', 'pc', 'step', 'alt', 'chroma', 'oct']
+FNS.forEach(function (name) {
+  parser[name] = function (src) {
+    var p = parse(src)
+    return p && isDef(p[name]) ? p[name] : null
+  }
+})
+
+module.exports = parser
+
+},{}]},{},[6]);

@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#add">add</a></li><li><a href="global.html#adshr">adshr</a></li><li><a href="global.html#after">after</a></li><li><a href="global.html#bypass">bypass</a></li><li><a href="global.html#connect">connect</a></li><li><a href="global.html#constant">constant</a></li><li><a href="global.html#context">context</a></li><li><a href="global.html#contextOf">contextOf</a></li><li><a href="global.html#dest">dest</a></li><li><a href="global.html#detune">detune</a></li><li><a href="global.html#feedback">feedback</a></li><li><a href="global.html#fetch">fetch</a></li><li><a href="global.html#filter">filter</a></li><li><a href="global.html#gain">gain</a></li><li><a href="global.html#generate">generate</a></li><li><a href="global.html#inst">inst</a></li><li><a href="global.html#lifecycle">lifecycle</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#master">master</a></li><li><a href="global.html#mult">mult</a></li><li><a href="global.html#note">note</a></li><li><a href="global.html#now">now</a></li><li><a href="global.html#osc">osc</a></li><li><a href="global.html#oscBank">oscBank</a></li><li><a href="global.html#perc">perc</a></li><li><a href="global.html#plug">plug</a></li><li><a href="global.html#sample">sample</a></li><li><a href="global.html#samplingRate">samplingRate</a></li><li><a href="global.html#scale">scale</a></li><li><a href="global.html#seconds">seconds</a></li><li><a href="global.html#signal">signal</a></li><li><a href="global.html#source">source</a></li><li><a href="global.html#tempo">tempo</a></li><li><a href="global.html#when">when</a></li><li><a href="global.html#white">white</a></li><li><a href="global.html#withOptions">withOptions</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#add">add</a></li><li><a href="global.html#adshr">adshr</a></li><li><a href="global.html#after">after</a></li><li><a href="global.html#bypass">bypass</a></li><li><a href="global.html#connect">connect</a></li><li><a href="global.html#constant">constant</a></li><li><a href="global.html#context">context</a></li><li><a href="global.html#contextOf">contextOf</a></li><li><a href="global.html#dB">dB</a></li><li><a href="global.html#dest">dest</a></li><li><a href="global.html#detune">detune</a></li><li><a href="global.html#feedback">feedback</a></li><li><a href="global.html#fetch">fetch</a></li><li><a href="global.html#filter">filter</a></li><li><a href="global.html#freqEnv">freqEnv</a></li><li><a href="global.html#gain">gain</a></li><li><a href="global.html#gainToDb">gainToDb</a></li><li><a href="global.html#generate">generate</a></li><li><a href="global.html#inst">inst</a></li><li><a href="global.html#lifecycle">lifecycle</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#master">master</a></li><li><a href="global.html#mult">mult</a></li><li><a href="global.html#note">note</a></li><li><a href="global.html#now">now</a></li><li><a href="global.html#osc">osc</a></li><li><a href="global.html#oscBank">oscBank</a></li><li><a href="global.html#perc">perc</a></li><li><a href="global.html#plug">plug</a></li><li><a href="global.html#sample">sample</a></li><li><a href="global.html#samplingRate">samplingRate</a></li><li><a href="global.html#saw">saw</a></li><li><a href="global.html#scale">scale</a></li><li><a href="global.html#seconds">seconds</a></li><li><a href="global.html#signal">signal</a></li><li><a href="global.html#sine">sine</a></li><li><a href="global.html#source">source</a></li><li><a href="global.html#square">square</a></li><li><a href="global.html#tempo">tempo</a></li><li><a href="global.html#triangle">triangle</a></li><li><a href="global.html#when">when</a></li><li><a href="global.html#white">white</a></li><li><a href="global.html#withOptions">withOptions</a></li></ul>
 </nav>
 
 <div id="main">
@@ -139,6 +139,7 @@ export function inst (synth, destination, maxVoices) {
     if (duration) node.stop(time + duration)
     return node
   }
+  i.track = trackNode.bind(null, voices)
   i.stop = function () { return stopAll(voices) }
   i.inst = function (synth, maxVoices) { return inst(synth, destination, maxVoices) }
   i.on = on.bind(null, i)
@@ -156,7 +157,10 @@ function initVoices (limit) {
 function trackNode (voices, node) {
   node.id = voices.nextId++
   voices.all[node.id] = node
-  return voices
+  on(node, 'ready', function (_, name) {
+    console.log('Instrument ready:', name)
+  })
+  return node
 }
 
 // stop all voices from the voices data object
@@ -195,7 +199,7 @@ function trigger (target, event /*, ...values */) {
 <br class="clear">
 
 <footer>
-    Documentation generated at Fri Oct 28 2016 13:49:47 GMT+0200 (CEST)
+    Documentation generated at Sat Oct 29 2016 01:50:12 GMT+0200 (CEST)
 </footer>
 
 <script>prettyPrint();</script>

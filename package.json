@@ -7,11 +7,13 @@
   "scripts": {
     "pretest": "rollup -c",
     "test": "tape 'test/**/*.js'",
-    "dist": "npm test && uglifyjs dist/synth-kit.js > dist/synth-kit.min.js && ls -hall dist/",
+    "dist": "npm run dist-core && npm run dist-live && ls -hall dist/",
+    "dist-core": "npm run pretest && uglifyjs dist/synth-kit.js > dist/synth-kit.min.js",
+    "dist-live": "browserify live.js > dist/synth-kit.live.js && uglifyjs dist/synth-kit.live.js > dist/synth-kit.live.min.js",
     "dev": "rollup -c --watch",
     "example": "budo example/nodes.js",
     "start": "budo example/livecoding.js --open",
-    "prepublish": "npm test",
+    "prepublish": "echo npm test && npm run dist && npm run docs",
     "docs": "rm -rf docs/ && jsdoc -d docs lib/*.js -R README.md -t node_modules/postman-jsdoc-theme && open docs/index.html"
   },
   "repository": {

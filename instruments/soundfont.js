@@ -1,15 +1,6 @@
+var _ = require('..')
 var Note = require('note-parser')
-var { context, connect, gain, filter, fetch, dest,
-  decodeAudio, inst, withOptions, source, adsr } = require('..')
 function is (t, x) { return typeof x === t }
-// import Note from 'note-parser'
-// import { fetch, decodeAudio } from './load'
-// import { context } from './context'
-// import { connect, gain, filter } from './core'
-// import { adsr } from './envelope'
-// import { sample } from './buffers'
-// import { inst, withOptions } from './instrument'
-// import { isObj, isNum, isFn } from './utils'
 
 var GLEITZ = 'https://gleitz.github.io/midi-js-soundfonts/'
 function isSoundfontURL (name) { return /\.js(\?.*)?$/i.test(name) }
@@ -25,7 +16,7 @@ function url (name, sf, format) {
 
 var LOAD_DEFAULTS = {
   format: 'mp3', soundfont: 'MusyngKite',
-  fetch: fetch, decodeAudio: decodeAudio
+  fetch: _.fetch, decodeAudio: _.decodeAudio
 }
 
 /**
@@ -48,35 +39,37 @@ var INST_DEFAULTS = {
 
 /**
  * Create a soundfont instrument.
+ * The configuration object can contain the following options:
  * @param {String} name - the soundfont name
  * @param {Object} options - (Optional) soundfont options
  * @return {Instrument} the soundfont instrument
  * @example
- * var piano = Soundfont.instrument('Acoustic Grand Piano')
+ * var piano = Soundfont.instrument('Acoustic Grand Piano', { gain: 1.5 })
  * piano.on('ready', function () {
  *    piano.start('C4')
  * })
  */
-function instrument (name, options) {
+function instrument (name, config) {
   var buffers = null
   var sample = function (midi) {
     if (buffers) return buffers[midi]
     console.warn('Instrument "' + name + '" not loaded yet.')
+    return _.generate(function () { return 0 }, 2)
   }
   var synth = function (o) {
-    return connect(
-      source(sample(o.midi)),
-      filter(o.filter.type, o.filter.freq),
+    return _.connect(
+      _.source(sample(o.midi), o.loop, o.detune),
+      _.filter(o.filter.type, o.filter.freq),
       /* adsr(o), */
-      gain(o.gain)
+      _.gain(o.gain)
     )
   }
-
-  synth = withOptions(synth, { defaults: INST_DEFAULTS, toOptions: prepareOptions })
-  var sf = inst(synth, dest())
-  load(name, options).then(function (result) {
+  var instOpts = Object.assign({}, INST_DEFAULTS, config)
+  synth = _.withOptions(synth, { defaults: instOpts, toOptions: prepareOptions })
+  var sf = _.inst(synth, _.dest())
+  load(name, config).then(function (result) {
     buffers = result
-    sf.trigger('ready', sf)
+    sf.trigger('ready', sf, name)
   })
   return sf
 }
@@ -105,7 +98,7 @@ function prepareOptions (o) {
  * @param {String} content - the midi.js encoded soundfont text
  */
 function decodeSoundfont (ac, decodeAudio) {
-  var ctx = context(ac)
+  var ctx = _.context(ac)
   return function (content) {
     var sf = parseMidijs(content)
     var names = Object.keys(sf)
@@ -167,4 +160,4 @@ function base64Decode (sBase64, nBlocksSize) {
   return taBytes
 }
 
-module.exports = { url, load, instrument }
+module.exports = { url: url, load: load, instrument: instrument }

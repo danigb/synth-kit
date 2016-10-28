@@ -1,0 +1,160 @@
+{
+  "Piano": [
+    "Acoustic Grand Piano",
+    "Bright Acoustic Piano",
+    "Electric Grand Piano",
+    "Electric Piano 1",
+    "Electric Piano 2",
+    "Clavichord",
+    "Harpsichord",
+    "Honkytonk Piano"
+  ],
+  "Organ": [
+    "Church Organ",
+    "Drawbar Organ",
+    "Reed Organ",
+    "Rock Organ",
+    "Percussive Organ"
+  ],
+  "Guitar": [
+    "Acoustic Guitar Nylon",
+    "Acoustic Guitar Steel",
+    "Electric Guitar Clean",
+    "Electric Guitar Jazz",
+    "Electric Guitar Muted",
+    "Distortion Guitar",
+    "Guitar Fret Noise",
+    "Guitar Harmonics",
+    "Overdriven Guitar"
+  ],
+  "Bass": [
+    "Acoustic Bass",
+    "Electric Bass Finger",
+    "Electric Bass Pick",
+    "Contrabass",
+    "Fretless Bass",
+    "Synth Bass 1",
+    "Synth Bass 2",
+    "Slap Bass 1",
+    "Slap Bass 2"
+  ],
+  "Strings": [
+    "Cello",
+    "Viola",
+    "Violin",
+    "Tremolo Strings",
+    "Pizzicato Strings",
+    "Synthstrings 1",
+    "Synthstrings 2"
+  ],
+  "Reed": [
+    "Soprano Sax",
+    "Alto Sax",
+    "Tenor Sax",
+    "Baritone Sax",
+    "Bassoon",
+    "Clarinet",
+    "Oboe"
+  ],
+  "Brass": [
+    "Brass Section",
+    "English Horn",
+    "French Horn",
+    "Muted Trumpet",
+    "Trombone",
+    "Trumpet",
+    "Tuba",
+    "Synthbrass 1",
+    "Synthbrass 2"
+  ],
+  "Ensemble": [
+    "Choir Aahs",
+    "Orchestra Hit",
+    "Orchestral Harp",
+    "String Ensemble 1",
+    "String Ensemble 2"
+  ],
+  "Pipe": [
+    "Flute",
+    "Ocarina",
+    "Pan Flute",
+    "Piccolo",
+    "Recorder",
+    "Whistle"
+  ],
+  "World": [
+    "Accordion",
+    "Tango Accordion",
+    "Bag Pipe",
+    "Banjo",
+    "Fiddle",
+    "Harmonica",
+    "Kalimba",
+    "Koto",
+    "Shakuhachi",
+    "Shamisen",
+    "Shanai",
+    "Sitar"
+  ],
+  "Chromatic Percussion": [
+    "Celesta",
+    "Dulcimer",
+    "Glockenspiel",
+    "Marimba",
+    "Music Box",
+    "Xylophone",
+    "Tubular Bells",
+    "Vibraphone",
+    "Steel Drums",
+    "Tinkle Bell"
+  ],
+  "Percussion": [
+    "Agogo",
+    "Melodic Tom",
+    "Woodblock",
+    "Reverse Cymbal",
+    "Timpani",
+    "Synth Drum",
+    "Taiko Drum"
+  ],
+  "Synth Lead": [
+    "Lead 1 Square",
+    "Lead 2 Sawtooth",
+    "Lead 3 Calliope",
+    "Lead 4 Chiff",
+    "Lead 5 Charang",
+    "Lead 6 Voice",
+    "Lead 7 Fifths",
+    "Lead 8 Bass Lead"
+  ],
+  "Synth Pad": [
+    "Pad 1 New Age",
+    "Pad 2 Warm",
+    "Pad 3 Polysynth",
+    "Pad 4 Choir",
+    "Pad 5 Bowed",
+    "Pad 6 Metallic",
+    "Pad 7 Halo",
+    "Pad 8 Sweep"
+  ],
+  "Sound Effects": [
+    "Applause",
+    "Bird Tweet",
+    "Blown Bottle",
+    "Breath Noise",
+    "Gunshot",
+    "Fx 1 Rain",
+    "Fx 2 Soundtrack",
+    "Fx 3 Crystal",
+    "Fx 4 Atmosphere",
+    "Fx 5 Brightness",
+    "Fx 6 Goblins",
+    "Fx 7 Echoes",
+    "Fx 8 Scifi",
+    "Helicopter",
+    "Seashore",
+    "Synth Voice",
+    "Telephone Ring",
+    "Voice Oohs"
+  ]
+}
