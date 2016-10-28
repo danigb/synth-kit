@@ -72,6 +72,7 @@
 
 	/**
 	 * Get time after n seconds (from now)
+	 * @function
 	 * @param {Float} delay - the delay
 	 * @param {AudioContext} context - (Optional) the audio context
 	 * @return {Float} time in seconds
@@ -192,21 +193,13 @@
 	/* global XMLHttpRequest */
 
 	/**
-	 * Load a buffer
+	 * Load a remote audio file.
 	 * @param {String} url
-	 * @param {AudioContext} context
-	 * @return {Function} a no-params function that returns the loaded buffer
-	 * (or null if not loaded)
+	 * @param {AudioContext} context - (Optional)
+	 * @return {Promise<AudioBuffer>} a promise that resolves to an AudioBuffer
 	 */
 	function load (url, ac) {
-	  var bf = null
-	  function buffer () { return bf }
-
-	  var promise = fetch(url, 'arraybuffer')
-	    .then(decodeAudio(ac))
-	    .then(function (result) { bf = result })
-	  buffer.then = promise.then.bind(promise)
-	  return buffer
+	  return fetch(url, 'arraybuffer').then(decodeAudio(ac))
 	}
 
 	/**
@@ -246,18 +239,6 @@
 
 	// ROUTING
 	// =======
-
-	function sendTo (dest, node, time, delay) {
-	  if (arguments.length > 1) return sendTo(dest)(node, time, delay)
-	  return function (node, time, delay) {
-	    node.connect(dest)
-	    node.start(time, delay)
-	    return node
-	  }
-	}
-
-	var toMaster = sendTo(dest())
-
 	/**
 	 * Connect nodes in series: A -> B -> C -> D
 	 * @param {Array<AudioNode>} nodes - the list of nodes to be connected
@@ -278,7 +259,12 @@
 	}
 
 	/**
-	 * Connect nodes in parallel
+	 * Connect nodes in parallel in order to add signals. This is one of the
+	 * routing functions (the other is `connect`).
+	 * @param {...AudioNode} nodes - the nodes to be connected
+	 * @return {AudioNode} the resulting audio node
+	 * @example
+	 * add(sine(400), sine(401)).start()
 	 */
 	function add (nodes) {
 	  nodes = isArray(nodes) ? nodes : slice.call(arguments)
@@ -300,9 +286,14 @@
 	// =======
 
 	/**
-	 * Create a constant signal
+	 * Create a constant signal. Normally you will use it in combination with
+	 * envelopes or modulators.
+	 *
 	 * @param {Integer} value - the value of the constant
-	 * @return {AudioNode} the audio node
+	 * @param {AudioContext} context - (Optional) the audio context
+	 * @return {AudioNode} the constant audio node
+	 * @example
+	 * sine(constant(440)).start()
 	 */
 	function constant (value, ac) {
 	  // TODO: cache buffer
@@ -315,26 +306,47 @@
 	  return source
 	}
 
+	/**
+	 * Create a signal source. You will use signals to change parameters of a
+	 * audio node after starting. See example.
+	 * @param {Integer} value - the value of the constant
+	 * @param {AudioContext} context - (Optional) the audio context
+	 * @return {AudioParam} the constant audio node
+	 * @example
+	 * var freq = signal(440)
+	 * sine(freq).start()
+	 * freq.value.linearRampToValueAtTime(880, after(5))
+	 */
 	function signal (value, ac) {
 	  var mod = context(ac).createGain()
-	  var signal = connect(constant(value), mod)
-	  signal.set = function (value, time) {
-	    mod.gain.setValueAtTime(value, time)
-	  }
-	  return signal.start()
+	  mod.gain.value = value
+	  var signal = connect(constant(1), mod)
+	  signal.value = mod.gain
+	  signal.start()
+	  return signal
 	}
 
 	/**
 	 * Create a node that bypasses the signal
 	 * @param {AudioContext} context - (Optional) the audio context
 	 * @return {AudioNode} the bypass audio node
+	 * @example
+	 * connect(sine(300), add(bypass(), dly(0.2)))
 	 */
 	function bypass (ac) {
 	  return context(ac).createGain()
 	}
 
 	/**
-	 * Create a gain
+	 * Create a gain node
+	 * @param {Float|AudioNode} gain - the gain value or modulator
+	 * @param {AudioContext} context - (Optional) the audio context
+	 * @return {AudioNode} the gain node
+	 * @example
+	 * connect(sine(440), gain(0.3))
+	 * @example
+	 * // with modulation (kind of tremolo)
+	 * connect(sine(400), gain(sine(10)))
 	 */
 	function gain (gain, ac) {
 	  var amp = context(ac).createGain()
@@ -414,7 +426,12 @@
 	}
 
 	/**
-	 * Create a buffer source (sample player)
+	 * Create a buffer source node.
+	 * @param {Buffer|Function} buffer - the buffer (or a function that returns a buffer)
+	 * @param {Boolean} loop - (Optional) loop the buffer or not (defaults to false)
+	 * @param {Integer|Node} detune - (Optional) the detune value or modulator
+	 * @param {AudioContext} context - (Optional) the audio context
+	 * @return {AudioNode} BufferSourceNode
 	 */
 	function source (buffer, loop, detune, ac) {
 	  var src = context(ac).createBufferSource()
@@ -627,15 +644,20 @@
 	  return i
 	}
 
+	// init a voices data object
 	function initVoices (limit) {
 	  limit = limit || 0
 	  return { limit: limit, all: {}, nextId: 0, current: 0, pool: new Array(limit) }
 	}
+
+	// add a given node to the voices data object
 	function trackNode (voices, node) {
 	  node.id = voices.nextId++
 	  voices.all[node.id] = node
 	  return voices
 	}
+
+	// stop all voices from the voices data object
 	function stopAll (voices) {
 	  Object.keys(voices.all).forEach(function (id) {
 	    voices.all[id].stop()
@@ -681,8 +703,6 @@
 	exports.fetch = fetch;
 	exports.connect = connect;
 	exports.add = add;
-	exports.toMaster = toMaster;
-	exports.sendTo = sendTo;
 	exports.constant = constant;
 	exports.bypass = bypass;
 	exports.gain = gain;

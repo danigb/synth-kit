@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>instrument.js - Documentation</title>
+    <title>instrument.js - Postman Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/ionicons.min.css">
     <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
     <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
 </head>
@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#add">add</a></li><li><a href="global.html#adshr">adshr</a></li><li><a href="global.html#after">after</a></li><li><a href="global.html#bypass">bypass</a></li><li><a href="global.html#connect">connect</a></li><li><a href="global.html#constant">constant</a></li><li><a href="global.html#context">context</a></li><li><a href="global.html#contextOf">contextOf</a></li><li><a href="global.html#dest">dest</a></li><li><a href="global.html#detune">detune</a></li><li><a href="global.html#feedback">feedback</a></li><li><a href="global.html#fetch">fetch</a></li><li><a href="global.html#filter">filter</a></li><li><a href="global.html#gain">gain</a></li><li><a href="global.html#generate">generate</a></li><li><a href="global.html#inst">inst</a></li><li><a href="global.html#lifecycle">lifecycle</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#master">master</a></li><li><a href="global.html#mult">mult</a></li><li><a href="global.html#note">note</a></li><li><a href="global.html#now">now</a></li><li><a href="global.html#osc">osc</a></li><li><a href="global.html#oscBank">oscBank</a></li><li><a href="global.html#perc">perc</a></li><li><a href="global.html#plug">plug</a></li><li><a href="global.html#sample">sample</a></li><li><a href="global.html#samplingRate">samplingRate</a></li><li><a href="global.html#scale">scale</a></li><li><a href="global.html#seconds">seconds</a></li><li><a href="global.html#source">source</a></li><li><a href="global.html#tempo">tempo</a></li><li><a href="global.html#when">when</a></li><li><a href="global.html#white">white</a></li><li><a href="global.html#withNotes">withNotes</a></li><li><a href="global.html#withOptions">withOptions</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#add">add</a></li><li><a href="global.html#adshr">adshr</a></li><li><a href="global.html#after">after</a></li><li><a href="global.html#bypass">bypass</a></li><li><a href="global.html#connect">connect</a></li><li><a href="global.html#constant">constant</a></li><li><a href="global.html#context">context</a></li><li><a href="global.html#contextOf">contextOf</a></li><li><a href="global.html#dest">dest</a></li><li><a href="global.html#detune">detune</a></li><li><a href="global.html#feedback">feedback</a></li><li><a href="global.html#fetch">fetch</a></li><li><a href="global.html#filter">filter</a></li><li><a href="global.html#gain">gain</a></li><li><a href="global.html#generate">generate</a></li><li><a href="global.html#inst">inst</a></li><li><a href="global.html#lifecycle">lifecycle</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#master">master</a></li><li><a href="global.html#mult">mult</a></li><li><a href="global.html#note">note</a></li><li><a href="global.html#now">now</a></li><li><a href="global.html#osc">osc</a></li><li><a href="global.html#oscBank">oscBank</a></li><li><a href="global.html#perc">perc</a></li><li><a href="global.html#plug">plug</a></li><li><a href="global.html#sample">sample</a></li><li><a href="global.html#samplingRate">samplingRate</a></li><li><a href="global.html#scale">scale</a></li><li><a href="global.html#seconds">seconds</a></li><li><a href="global.html#signal">signal</a></li><li><a href="global.html#source">source</a></li><li><a href="global.html#tempo">tempo</a></li><li><a href="global.html#when">when</a></li><li><a href="global.html#white">white</a></li><li><a href="global.html#withOptions">withOptions</a></li></ul>
 </nav>
 
 <div id="main">
@@ -43,25 +43,33 @@ import { isFn, isObj } from './utils'
 var slice = Array.prototype.slice
 
 /**
- * @example
- * var synth = withNotes((fq) => return sine(fq))
- * synth('A4') // => play a 440Hz sound
- * synth(60) // => same as: play('C4')
- */
-export function withNotes (fn) {
-  return function () {
-
-  }
-}
-
-/**
+ * Decorate a function to receive a options object. This decoration ensures that
+ * the function always receive an options object. It also perform some other
+ * goodies like convert from note names to frequencies, provide a context
+ * option with the AudioContext or wrap notes into { frequency: ... } object.
+ *
+ * The possible values of the config object are:
+ *
+ * - defaults: If provided, the defaults object will be merged with the options
+ * - toOptions: a function that is called if the given parameter is not an
+ * options configuration. If not provided, by default it will put the parameter
+ * as the frequency of the options (see example)
+ *
+ * @param {Function} synth - the synth function (a function that returns a
+ * graph of audio nodes)
+ * @param {Object} config - the configuration
+ * @return {Function} a decorated synth function
  * @example
  * var synth = withOptions(function (o) {
  *    return connect(sine(o.frequency),
  *      filter(o.filter.type, o.filter.frequency || o.frequency))
- * }, { frequency: 440, filter: { type: 'lowpass' }}, ['frequency'])
+ * }, {
+ *  defaults: { frequency: 440, filter: { type: 'lowpass' } }
+ * })
+ * // It will convert note names into frequencies automatically
  * synth({ frequency: 'A4' })
- * synth('A4')
+ * // By default will convert note names to { frequency: &lt;freq of note> }
+ * synth('A4') // equivalent to: synth({ frequency: 440 })
  */
 export function withOptions (fn, config) {
   config = config || {}
@@ -76,14 +84,36 @@ function freqAndContextToOpts (frequency, context) {
 }
 
 /**
- * A master output instrument. You can start nodes with it
+ * A master output instrument. You can use it to start and stop nodes. All
+ * started nodes will be connected to the AudioContext destination.
  *
  * @example
- * master.start(sine(300))
+ * master.start(sine(300)) // connect to destination and start
+ * master.start(sine(600), 0, 1) // connect to destination and start after 1 second
+ * master.stop() // stop all
  */
 export var master = inst(null, dest())
 
 /**
+ * Create an object-oriented-style instrument player. It wraps a synth function
+ * (a function that create nodes) into in a convenient player API. It can
+ * be used to limit the polyphony.
+ *
+ * The player object have the following methods:
+ *
+ * - `start(node, when, delay, duration)`: start a node
+ * - `stop`: stop all nodes
+ * - `on(event, callback)`: add an event callback
+ * - `trigger(event, ...values)`: make the player trigger an event
+ *
+ *
+ * @param {Function} synth - the synth function (a function that returns a node graph)
+ * @param {AudioNode} destination - if present, all nodes will be connected to
+ * this destination
+ * @param {Integer} maxVoices - (Optional) the maximum number of simultaneous
+ * voices (0 means no limit, defaults to 0)
+ * @return {Player} a player object
+ *
  * @example
  * // an instrument with destination
  * var synth = inst((fq) => sine(fq), dest())
@@ -116,22 +146,28 @@ export function inst (synth, destination, maxVoices) {
   return i
 }
 
+// init a voices data object
 function initVoices (limit) {
   limit = limit || 0
   return { limit: limit, all: {}, nextId: 0, current: 0, pool: new Array(limit) }
 }
+
+// add a given node to the voices data object
 function trackNode (voices, node) {
   node.id = voices.nextId++
   voices.all[node.id] = node
   return voices
 }
+
+// stop all voices from the voices data object
 function stopAll (voices) {
   Object.keys(voices.all).forEach(function (id) {
     voices.all[id].stop()
   })
 }
 
-export function on (target, event, callback) {
+// add a listener to a target
+function on (target, event, callback) {
   if (!event || event === '*') event = 'event'
   var prev = target['on' + event]
   target['on' + event] = function () {
@@ -140,7 +176,8 @@ export function on (target, event, callback) {
   }
 }
 
-export function trigger (target, event /*, ...values */) {
+// trigger an event
+function trigger (target, event /*, ...values */) {
   if (!isFn(target['on' + event])) return
   var args = slice.call(arguments, 2)
   target['on' + event].apply(null, args)
@@ -158,7 +195,7 @@ export function trigger (target, event /*, ...values */) {
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.2</a> on Fri Oct 28 2016 12:58:38 GMT+0200 (CEST) using the Minami theme.
+    Documentation generated at Fri Oct 28 2016 13:49:47 GMT+0200 (CEST)
 </footer>
 
 <script>prettyPrint();</script>

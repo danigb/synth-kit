@@ -1,5 +1,9 @@
 var _ = require('..')
 
-export function snare () {
+function snare () {
   return _.connect(_.white(), _.perc())
+}
+
+module.exports = {
+  snare: snare
 }

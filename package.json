@@ -12,7 +12,7 @@
     "example": "budo example/nodes.js",
     "start": "budo example/livecoding.js --open",
     "prepublish": "npm test",
-    "docs": "jsdoc2md lib/*.js > API.md && jsdoc -d docs lib/*.js -R README.md -t node_modules/minami"
+    "docs": "rm -rf docs/ && jsdoc -d docs lib/*.js -R README.md -t node_modules/postman-jsdoc-theme && open docs/index.html"
   },
   "repository": {
     "type": "git",
@@ -31,7 +31,7 @@
   },
   "homepage": "https://github.com/danigb/synth-kit#readme",
   "devDependencies": {
-    "minami": "^1.1.1",
+    "postman-jsdoc-theme": "0.0.2",
     "rollup": "^0.36.3",
     "rollup-plugin-commonjs": "^5.0.5",
     "rollup-plugin-node-resolve": "^2.0.0",
