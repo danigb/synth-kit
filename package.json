@@ -11,7 +11,8 @@
     "dev": "rollup -c --watch",
     "example": "budo example/nodes.js",
     "start": "budo example/livecoding.js --open",
-    "prepublish": "npm test"
+    "prepublish": "npm test",
+    "docs": "jsdoc2md lib/*.js > API.md"
   },
   "repository": {
     "type": "git",
@@ -38,6 +39,7 @@
     "web-audio-test-api": "^0.5.2"
   },
   "dependencies": {
-    "audio-context": "^0.1.0"
+    "audio-context": "^0.1.0",
+    "note-parser": "^2.0.0"
   }
 }
