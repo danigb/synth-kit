@@ -1,3 +1,4 @@
+require('web-audio-test-api')
 var test = require('tape')
 var SynthKit = require('..')
 

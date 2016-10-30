@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Global - Postman Documentation</title>
+    <title>instrument - Postman Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -28,7 +28,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">Global</h1>
+    <h1 class="page-title">instrument</h1>
     
 
     
@@ -40,9 +40,6 @@
 
 <header>
     
-        <h2>
-        
-        </h2>
         
     
 </header>
@@ -51,45 +48,6 @@
     <div class="container-overview">
     
         
-
-        
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
 
         
     
@@ -106,6 +64,80 @@
     
 
     
+        <h3 class="subsection-title">Members</h3>
+
+        
+            
+<h4 class="name" id=".master"><span class="type-signature">(static) </span>master<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    <p>A master output instrument. You can use it to start and stop nodes. All
+started nodes will be connected to the AudioContext destination.</p>
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="instrument.js.html">instrument.js</a>, <a href="instrument.js.html#line56">line 56</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>master.start(sine(300)) // connect to destination and start
+master.start(sine(600), 0, 1) // connect to destination and start after 1 second
+master.stop() // stop all</code></pre>
+
+
+
+        
+    
 
     
         <h3 class="subsection-title">Methods</h3>
@@ -115,14 +147,23 @@
 
     
 
-    <h4 class="name" id="dB"><span class="type-signature"></span>dB<span class="signature">(db)</span><span class="type-signature"> &rarr; {Number}</span></h4>
+    <h4 class="name" id=".inst"><span class="type-signature">(static) </span>inst<span class="signature">(synth, destination, maxVoices)</span><span class="type-signature"> &rarr; {Player}</span></h4>
 
     
 
 
 
 <div class="description">
-    <p>Convert decibels into gain.</p>
+    <p>Create an object-oriented-style instrument player. It wraps a synth function
+(a function that create nodes) into in a convenient player API. It can
+be used to limit the polyphony.</p>
+<p>The player object have the following methods:</p>
+<ul>
+<li><code>start(node, when, delay, duration)</code>: start a node</li>
+<li><code>stop</code>: stop all nodes</li>
+<li><code>on(event, callback)</code>: add an event callback</li>
+<li><code>trigger(event, ...values)</code>: make the player trigger an event</li>
+</ul>
 </div>
 
 
@@ -158,13 +199,13 @@
 
         <tr>
             
-                <td class="name"><code>db</code></td>
+                <td class="name"><code>synth</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Number</span>
+<span class="param-type">function</span>
 
 
             
@@ -174,7 +215,55 @@
 
             
 
-            <td class="description last"></td>
+            <td class="description last"><p>the synth function (a function that returns a node graph)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>destination</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">AudioNode</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>if present, all nodes will be connected to
+this destination</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>maxVoices</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(Optional) the maximum number of simultaneous
+voices (0 means no limit, defaults to 0)</p></td>
         </tr>
 
     
@@ -215,7 +304,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="units.js.html">units.js</a>, <a href="units.js.html#line40">line 40</a>
+        <a href="instrument.js.html">instrument.js</a>, <a href="instrument.js.html#line90">line 90</a>
     </li></ul></dd>
     
 
@@ -242,7 +331,7 @@
 
         
 <div class="param-desc">
-    <p>the gain (from 0 to 1)</p>
+    <p>a player object</p>
 </div>
 
 
@@ -253,7 +342,7 @@
     </dt>
     <dd>
         
-<span class="param-type">Number</span>
+<span class="param-type">Player</span>
 
 
     </dd>
@@ -262,20 +351,44 @@
     
 
 
+    <h5>Examples</h5>
+    
+    <pre class="prettyprint"><code>// an instrument with destination
+var synth = inst((fq) => sine(fq), dest())
+synth.start('A4')
+synth.stopAll()</code></pre>
+
+    <pre class="prettyprint"><code>// only the destination
+var master = inst(null, connect(mix(0.2), reverb(), dest()))
+master.start(sine(300))
+master.start(sine(400))
+master.stopAll()</code></pre>
+
+
 
         
             
 
     
 
-    <h4 class="name" id="gainToDb"><span class="type-signature"></span>gainToDb<span class="signature">(gain)</span><span class="type-signature"> &rarr; {Decibels}</span></h4>
+    <h4 class="name" id=".withOptions"><span class="type-signature">(static) </span>withOptions<span class="signature">(synth, config)</span><span class="type-signature"> &rarr; {function}</span></h4>
 
     
 
 
 
 <div class="description">
-    <p>Convert gain to decibels.</p>
+    <p>Decorate a function to receive a options object. This decoration ensures that
+the function always receive an options object. It also perform some other
+goodies like convert from note names to frequencies, provide a context
+option with the AudioContext or wrap notes into { frequency: ... } object.</p>
+<p>The possible values of the config object are:</p>
+<ul>
+<li>defaults: If provided, the defaults object will be merged with the options</li>
+<li>toOptions: a function that is called if the given parameter is not an
+options configuration. If not provided, by default it will put the parameter
+as the frequency of the options (see example)</li>
+</ul>
 </div>
 
 
@@ -311,13 +424,13 @@
 
         <tr>
             
-                <td class="name"><code>gain</code></td>
+                <td class="name"><code>synth</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Number</span>
+<span class="param-type">function</span>
 
 
             
@@ -327,7 +440,31 @@
 
             
 
-            <td class="description last"><p>(0-1)</p></td>
+            <td class="description last"><p>the synth function (a function that returns a
+graph of audio nodes)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>config</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the configuration</p></td>
         </tr>
 
     
@@ -368,262 +505,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="units.js.html">units.js</a>, <a href="units.js.html#line47">line 47</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Decibels</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="note"><span class="type-signature"></span>note<span class="signature">()</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>Get frequency of a note. The note can be a note name in scientific
-notation (for example: 'C#2') or a midi number</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="units.js.html">units.js</a>, <a href="units.js.html#line22">line 22</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="tempo"><span class="type-signature"></span>tempo<span class="signature">(bpm, sub)</span><span class="type-signature"> &rarr; {Float}</span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>Convert from beats per minute to hertzs</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>bpm</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Integer</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>the tempo</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>sub</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Integer</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>(Optional) subdivision (default 1)</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="units.js.html">units.js</a>, <a href="units.js.html#line16">line 16</a>
+        <a href="instrument.js.html">instrument.js</a>, <a href="instrument.js.html#line35">line 35</a>
     </li></ul></dd>
     
 
@@ -650,7 +532,7 @@ notation (for example: 'C#2') or a midi number</p>
 
         
 <div class="param-desc">
-    <p>the tempo expressed in hertzs</p>
+    <p>a decorated synth function</p>
 </div>
 
 
@@ -661,13 +543,27 @@ notation (for example: 'C#2') or a midi number</p>
     </dt>
     <dd>
         
-<span class="param-type">Float</span>
+<span class="param-type">function</span>
 
 
     </dd>
 </dl>
 
     
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>var synth = withOptions(function (o) {
+   return connect(sine(o.frequency),
+     filter(o.filter.type, o.filter.frequency || o.frequency))
+}, {
+ defaults: { frequency: 440, filter: { type: 'lowpass' } }
+})
+// It will convert note names into frequencies automatically
+synth({ frequency: 'A4' })
+// By default will convert note names to { frequency: &lt;freq of note> }
+synth('A4') // equivalent to: synth({ frequency: 440 })</code></pre>
 
 
 

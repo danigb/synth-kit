@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Global - Postman Documentation</title>
+    <title>buffers - Postman Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -28,7 +28,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">Global</h1>
+    <h1 class="page-title">buffers</h1>
     
 
     
@@ -40,9 +40,8 @@
 
 <header>
     
-        <h2>
         
-        </h2>
+            
         
     
 </header>
@@ -51,8 +50,25 @@
     <div class="container-overview">
     
         
+            <div class="description"><p>In synth-kit buffers can be generated (with the <code>gen</code> function) or
+retrieved from an audio file (with the <code>sample</code>) function</p></div>
+        
 
         
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 <dl class="details">
@@ -82,6 +98,11 @@
     
 
     
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="buffers.js.html">buffers.js</a>, <a href="buffers.js.html#line1">line 1</a>
+    </li></ul></dd>
+    
 
     
 
@@ -89,6 +110,20 @@
 
     
 </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         
@@ -115,14 +150,15 @@
 
     
 
-    <h4 class="name" id="dB"><span class="type-signature"></span>dB<span class="signature">(db)</span><span class="type-signature"> &rarr; {Number}</span></h4>
+    <h4 class="name" id=".gen"><span class="type-signature">(static) </span>gen<span class="signature">(generators, samples, options)</span><span class="type-signature"> &rarr; {function}</span></h4>
 
     
 
 
 
 <div class="description">
-    <p>Convert decibels into gain.</p>
+    <p>Generate a BufferNode. It returns a no-parameter function that
+returns a buffer. This way, it's easy to memoize (cache) buffers.</p>
 </div>
 
 
@@ -158,13 +194,16 @@
 
         <tr>
             
-                <td class="name"><code>db</code></td>
+                <td class="name"><code>generators</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Number</span>
+<span class="param-type">function</span>
+|
+
+<span class="param-type">Array.&lt;function()></span>
 
 
             
@@ -174,7 +213,58 @@
 
             
 
-            <td class="description last"></td>
+            <td class="description last"><p>a generator or a list of
+generators (to create a buffer with multiple channels)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>samples</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the length in samples</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(Optional) options can include:</p>
+<ul>
+<li>reverse: set to true to reverse the generated buffer</li>
+<li>context: the audio context to use</li>
+</ul></td>
         </tr>
 
     
@@ -215,7 +305,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="units.js.html">units.js</a>, <a href="units.js.html#line40">line 40</a>
+        <a href="buffers.js.html">buffers.js</a>, <a href="buffers.js.html#line79">line 79</a>
     </li></ul></dd>
     
 
@@ -242,7 +332,7 @@
 
         
 <div class="param-desc">
-    <p>the gain (from 0 to 1)</p>
+    <p>a function with no parameters that returns the desired buffer</p>
 </div>
 
 
@@ -253,7 +343,7 @@
     </dt>
     <dd>
         
-<span class="param-type">Number</span>
+<span class="param-type">function</span>
 
 
     </dd>
@@ -268,14 +358,15 @@
 
     
 
-    <h4 class="name" id="gainToDb"><span class="type-signature"></span>gainToDb<span class="signature">(gain)</span><span class="type-signature"> &rarr; {Decibels}</span></h4>
+    <h4 class="name" id=".sample"><span class="type-signature">(static) </span>sample<span class="signature">(url, options)</span><span class="type-signature"> &rarr; {function}</span></h4>
 
     
 
 
 
 <div class="description">
-    <p>Convert gain to decibels.</p>
+    <p>Fetch a remote audio sample. You get a function that returns an AudioBuffer
+when loaded or null otherwise. Or you can chain like a promise.</p>
 </div>
 
 
@@ -311,13 +402,13 @@
 
         <tr>
             
-                <td class="name"><code>gain</code></td>
+                <td class="name"><code>url</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Number</span>
+<span class="param-type">String</span>
 
 
             
@@ -327,7 +418,33 @@
 
             
 
-            <td class="description last"><p>(0-1)</p></td>
+            <td class="description last"><p>the url of the file</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(Optional) options can include:</p>
+<ul>
+<li>context: the audio context to use</li>
+</ul></td>
         </tr>
 
     
@@ -368,262 +485,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="units.js.html">units.js</a>, <a href="units.js.html#line47">line 47</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Decibels</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="note"><span class="type-signature"></span>note<span class="signature">()</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>Get frequency of a note. The note can be a note name in scientific
-notation (for example: 'C#2') or a midi number</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="units.js.html">units.js</a>, <a href="units.js.html#line22">line 22</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="tempo"><span class="type-signature"></span>tempo<span class="signature">(bpm, sub)</span><span class="type-signature"> &rarr; {Float}</span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>Convert from beats per minute to hertzs</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>bpm</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Integer</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>the tempo</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>sub</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Integer</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>(Optional) subdivision (default 1)</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="units.js.html">units.js</a>, <a href="units.js.html#line16">line 16</a>
+        <a href="buffers.js.html">buffers.js</a>, <a href="buffers.js.html#line57">line 57</a>
     </li></ul></dd>
     
 
@@ -650,7 +512,7 @@ notation (for example: 'C#2') or a midi number</p>
 
         
 <div class="param-desc">
-    <p>the tempo expressed in hertzs</p>
+    <p>a function the returns the buffer</p>
 </div>
 
 
@@ -661,13 +523,401 @@ notation (for example: 'C#2') or a midi number</p>
     </dt>
     <dd>
         
-<span class="param-type">Float</span>
+<span class="param-type">function</span>
 
 
     </dd>
 </dl>
 
     
+
+
+    <h5>Examples</h5>
+    
+    <pre class="prettyprint"><code>source(sample('server.com/audio-file.mp3')).start()</code></pre>
+
+    <pre class="prettyprint"><code>// use the Promise like interface
+sample('audio-file.mp3').then(function (buffer) {
+    source(buffer).start()
+})</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".source"><span class="type-signature">(static) </span>source<span class="signature">(buffer, options)</span><span class="type-signature"> &rarr; {AudioNode}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Create a buffer source (a BufferSourceNode)</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>buffer</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Buffer</span>
+|
+
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the buffer (or a function that returns a buffer)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(Optional) options can include:</p>
+<ul>
+<li>loop: set to true to loop the buffer</li>
+<li>detune: the detune amount (can be a number or a signal)</li>
+<li>context: the audio context to use</li>
+</ul></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="buffers.js.html">buffers.js</a>, <a href="buffers.js.html#line27">line 27</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>a BufferSourceNode</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">AudioNode</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>source(sample('snare.wav')).start()
+source(sample('amen-break.mp3'), { loop: true })</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".white"><span class="type-signature">(static) </span>white<span class="signature">(length, options)</span><span class="type-signature"> &rarr; {AudioNode}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>White noise source node.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>length</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>lenth in samples</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(Optional) the same options that <code>source</code> function</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="buffers.js.html">buffers.js</a>, <a href="buffers.js.html#line111">line 111</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li>source</li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>the white noise audio node generator</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">AudioNode</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>connect(white(seconds(1)), perc(), dest()).start()</code></pre>
 
 
 

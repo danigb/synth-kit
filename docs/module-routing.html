@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Global - Postman Documentation</title>
+    <title>routing - Postman Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -28,7 +28,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">Global</h1>
+    <h1 class="page-title">routing</h1>
     
 
     
@@ -40,9 +40,8 @@
 
 <header>
     
-        <h2>
         
-        </h2>
+            
         
     
 </header>
@@ -51,8 +50,28 @@
     <div class="container-overview">
     
         
+            <div class="description"><p>This module provides two ways to route nodes:</p>
+<ul>
+<li>In series: A -&gt; B -&gt; C -&gt; D, using the <code>connect</code> function</li>
+<li>In parallel: in -&gt; [A, B, C] -&gt; out, using the <code>add</code> function</li>
+</ul></div>
+        
 
         
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 <dl class="details">
@@ -82,6 +101,11 @@
     
 
     
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="routing.js.html">routing.js</a>, <a href="routing.js.html#line1">line 1</a>
+    </li></ul></dd>
+    
 
     
 
@@ -89,6 +113,20 @@
 
     
 </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         
@@ -115,14 +153,15 @@
 
     
 
-    <h4 class="name" id="dB"><span class="type-signature"></span>dB<span class="signature">(db)</span><span class="type-signature"> &rarr; {Number}</span></h4>
+    <h4 class="name" id=".add"><span class="type-signature">(static) </span>add<span class="signature">(&hellip;nodes)</span><span class="type-signature"> &rarr; {AudioNode}</span></h4>
 
     
 
 
 
 <div class="description">
-    <p>Convert decibels into gain.</p>
+    <p>Connect nodes in parallel in order to add signals. This is one of the
+routing functions (the other is <code>connect</code>).</p>
 </div>
 
 
@@ -146,6 +185,8 @@
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
 
@@ -158,23 +199,33 @@
 
         <tr>
             
-                <td class="name"><code>db</code></td>
+                <td class="name"><code>nodes</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Number</span>
+<span class="param-type">AudioNode</span>
 
 
             
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                    &lt;repeatable><br>
+                
+                </td>
+            
 
             
 
-            <td class="description last"></td>
+            <td class="description last"><p>the nodes to be connected</p></td>
         </tr>
 
     
@@ -215,7 +266,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="units.js.html">units.js</a>, <a href="units.js.html#line40">line 40</a>
+        <a href="routing.js.html">routing.js</a>, <a href="routing.js.html#line38">line 38</a>
     </li></ul></dd>
     
 
@@ -242,7 +293,7 @@
 
         
 <div class="param-desc">
-    <p>the gain (from 0 to 1)</p>
+    <p>the resulting audio node</p>
 </div>
 
 
@@ -253,7 +304,7 @@
     </dt>
     <dd>
         
-<span class="param-type">Number</span>
+<span class="param-type">AudioNode</span>
 
 
     </dd>
@@ -262,20 +313,25 @@
     
 
 
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>add(sine(400), sine(401)).start()</code></pre>
+
+
 
         
             
 
     
 
-    <h4 class="name" id="gainToDb"><span class="type-signature"></span>gainToDb<span class="signature">(gain)</span><span class="type-signature"> &rarr; {Decibels}</span></h4>
+    <h4 class="name" id=".connect"><span class="type-signature">(static) </span>connect<span class="signature">(nodes)</span><span class="type-signature"> &rarr; {AudioNode}</span></h4>
 
     
 
 
 
 <div class="description">
-    <p>Convert gain to decibels.</p>
+    <p>Connect nodes in series: A -&gt; B -&gt; C -&gt; D.</p>
 </div>
 
 
@@ -311,13 +367,13 @@
 
         <tr>
             
-                <td class="name"><code>gain</code></td>
+                <td class="name"><code>nodes</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Number</span>
+<span class="param-type">Array.&lt;AudioNode></span>
 
 
             
@@ -327,7 +383,7 @@
 
             
 
-            <td class="description last"><p>(0-1)</p></td>
+            <td class="description last"><p>the list of nodes to be connected</p></td>
         </tr>
 
     
@@ -368,262 +424,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="units.js.html">units.js</a>, <a href="units.js.html#line47">line 47</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Decibels</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="note"><span class="type-signature"></span>note<span class="signature">()</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>Get frequency of a note. The note can be a note name in scientific
-notation (for example: 'C#2') or a midi number</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="units.js.html">units.js</a>, <a href="units.js.html#line22">line 22</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="tempo"><span class="type-signature"></span>tempo<span class="signature">(bpm, sub)</span><span class="type-signature"> &rarr; {Float}</span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>Convert from beats per minute to hertzs</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>bpm</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Integer</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>the tempo</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>sub</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Integer</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>(Optional) subdivision (default 1)</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="units.js.html">units.js</a>, <a href="units.js.html#line16">line 16</a>
+        <a href="routing.js.html">routing.js</a>, <a href="routing.js.html#line16">line 16</a>
     </li></ul></dd>
     
 
@@ -650,7 +451,7 @@ notation (for example: 'C#2') or a midi number</p>
 
         
 <div class="param-desc">
-    <p>the tempo expressed in hertzs</p>
+    <p>the resulting audio node</p>
 </div>
 
 
@@ -661,7 +462,7 @@ notation (for example: 'C#2') or a midi number</p>
     </dt>
     <dd>
         
-<span class="param-type">Float</span>
+<span class="param-type">AudioNode</span>
 
 
     </dd>

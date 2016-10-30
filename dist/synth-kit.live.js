@@ -33,6 +33,13 @@ var Context = window.AudioContext || window.webkitAudioContext;
 if (Context) module.exports = new Context;
 });
 
+/**
+ * In synth-kit most of the functions accepts an optional AudioContext as
+ * last parameter. If no one is provided, synth-kit creates a singleton
+ * AudioContext using ['audio-context'](npmjs.com/package/audio-context) module.
+ *
+ * @module context
+ */
 // Shim to make connect chainable (soon to be implemented native)
 var proto = Object.getPrototypeOf(Object.getPrototypeOf(index.createGain()));
 var _connect = proto.connect;
@@ -42,22 +49,33 @@ proto.connect = function () {
 };
 
 /**
- * Get the audio context
+ * Get the audio context.
+ * @param {AudioContext} context - (Optional) if given, it return itself. If
+ * nothing passed, it returns the AudioContext singleton instance
+ * @return {AudioContext} the audio context
+ * @example
+ * // normally you won't do this:
+ * var gain = context().createGain()
  */
-function context (ctx) { return ctx || index }
-
-/**
- * Get the audio context of an audio node
- */
-function contextOf (node) { return node ? context(node.context) : index }
+function context (ctx) {
+  return ctx ? ctx.context || ctx : index
+}
 
 /**
  * Get the audio context's destination
+ * @param {AudioContext} context - (Optional) an alternate audio context
+ * @return {AudioContext} the audio context destination
+ * @example
+ * connect(sine(300), dest()).start()
  */
 function dest (context) { return (context || index).destination }
 
 /**
  * Get audio context's current time
+ * @param {AudioContext} context - (Optional) an optional audio context
+ * @return {Number} the time in seconds relative to the AudioContext creation
+ * @example
+ * now() // => 3.3213
  */
 function now (context) { return (context || index).currentTime }
 
@@ -65,7 +83,7 @@ function now (context) { return (context || index).currentTime }
  * Get a valid time
  * @param {Float} time - the time (equal or greater than now(), otherwise, ignored)
  * @param {Float} delay - the delay
- * @param {AudioContext} context - (Optional) the audio context
+ * @param {AudioContext} context - (Optional) an optional audio context
  * @example
  * now() // => 0.7
  * time(0.2) // => 0.7
@@ -80,7 +98,7 @@ function when (time, delay, ctx) {
  * Get time after n seconds (from now)
  * @function
  * @param {Float} delay - the delay
- * @param {AudioContext} context - (Optional) the audio context
+ * @param {AudioContext} context - (Optional) an optional audio context
  * @return {Float} time in seconds
  * @example
  * now() // => 0.785
@@ -95,7 +113,7 @@ var after = when.bind(0);
  * @example
  * samplingRate() // => 44100
  */
-function samplingRate (context) { return (context || index).sampleRate }
+function samplingRate (ctx) { return context(ctx).sampleRate }
 
 /**
  * Convert from seconds to samples (using AudioContext sampling rate)
@@ -105,7 +123,7 @@ function samplingRate (context) { return (context || index).sampleRate }
  * @example
  * white(seconds(1.2)) // => generate 1.2 seconds of white noise
  */
-function seconds (secs, context) { return secs * samplingRate(context) }
+function timeToSamples (secs, context) { return secs * samplingRate(context) }
 
 // util
 function fillStr (s, num) { return Array(num + 1).join(s) }
@@ -303,77 +321,13 @@ FNS.forEach(function (name) {
 
 var index$1 = parser;
 
-function isNum$1 (n) { return typeof n === 'number' }
-function isFn (x) { return typeof x === 'function' }
-function isStr$1 (x) { return typeof x === 'string' }
-function isObj (x) { return typeof x === 'object' }
-
-// CONVERSION
-// ==========
+var pow = Math.pow;
 
 /**
- * Plug something (a value, a node) into a node parameter
+ * typeof shortcut
+ * @private
  */
-function plug (name, value, node) {
-  if (typeof value === 'undefined') {
-    // do nothing
-  } else if (typeof value.connect === 'function') {
-    node[name].value = 0;
-    value.connect(node[name]);
-    return value
-  } else if (node[name]) {
-    node[name].value = value;
-  }
-}
-
-// TODO: export?
-// Get time for a given `when` and  `delay` parameters
-function toTime (context, when, delay) {
-  return Math.max(context.currentTime, when || 0) + (delay || 0)
-}
-
-function bindLifecycle (node) {
-  return {
-    connect: node.connect ? node.connect.bind(node) : null,
-    disconnect: node.disconnect ? node.disconnect.bind(node) : null,
-    start: node.start ? node.start.bind(node) : null,
-    stop: node.stop ? node.stop.bind(node) : null
-  }
-}
-
-function dispatch (event, value, node, dependents) {
-  if (node[event]) node[event](value);
-  dependents.forEach(function (dep) {
-    if (dep && dep[event]) dep[event](value);
-  });
-  return node
-}
-
-/**
- * Override node functions to handle better the node's lifecycle
- */
-function lifecycle (node, dependents) {
-  // TODO: possible optimization: if dependents is empty, no need to decorate
-  var raw = bindLifecycle(node);
-
-  node.connected = false;
-  node.disconnect = function () {
-    node.connected = false;
-    dispatch('disconnect', null, raw, dependents);
-  };
-  node.start = function (when, delay, duration) {
-    var time = toTime(node.context, when, delay);
-    // if (!node.connected) node.connect(node.context.destination)
-    dispatch('start', time, raw, dependents);
-    if (duration) node.stop(time + duration);
-    return node
-  };
-  node.stop = function (when, delay) {
-    var time = toTime(node.context, when, delay);
-    dispatch('stop', time, raw, dependents);
-  };
-  return node
-}
+function isA (t, x) { return typeof x === t }
 
 /**
  * Convert from beats per minute to hertzs
@@ -392,9 +346,9 @@ function note (name, base) {
 }
 
 function hz (value, base) {
-  if (isStr$1(value)) {
+  if (isA('string', value)) {
     base = base || 440;
-    return Math.pow(2, (+value - 69) / 12) * base
+    return pow(2, (+value - 69) / 12) * base
   } else {
     return Math.abs(+value)
   }
@@ -405,7 +359,7 @@ function hz (value, base) {
  *  @param  {Number} db
  *  @return {Number} the gain (from 0 to 1)
  */
-function dB (db) { return Math.pow(2, db / 6) }
+function dB (db) { return pow(2, db / 6) }
 
 /**
  *  Convert gain to decibels.
@@ -414,20 +368,456 @@ function dB (db) { return Math.pow(2, db / 6) }
  */
 function gainToDb (gain) { return 20 * (Math.log(gain) / Math.LN10) }
 
-/* global XMLHttpRequest */
+/**
+ * This module provides two ways to route nodes:
+ *
+ * - In series: A -> B -> C -> D, using the `connect` function
+ * - In parallel: in -> [A, B, C] -> out, using the `add` function
+ * @module routing
+ */
+var slice = Array.prototype.slice;
+var isArray = Array.isArray;
 
 /**
- * Load a remote audio file.
+ * Connect nodes in series: A -> B -> C -> D.
+ * @param {Array<AudioNode>} nodes - the list of nodes to be connected
+ * @return {AudioNode} the resulting audio node
+ */
+function connect (nodes) {
+  nodes = isArray(nodes) ? nodes : slice.call(arguments);
+  if (!nodes.length) return null
+  else if (nodes.length === 1) return nodes[0]
+
+  var first = nodes[0];
+  var last = nodes.reduce(function (src, dest) {
+    src.connect(dest);
+    return dest
+  });
+  first.connect = last.connect.bind(last);
+  return lifecycle(first, nodes.slice(1))
+}
+
+/**
+ * Connect nodes in parallel in order to add signals. This is one of the
+ * routing functions (the other is `connect`).
+ * @param {...AudioNode} nodes - the nodes to be connected
+ * @return {AudioNode} the resulting audio node
+ * @example
+ * add(sine(400), sine(401)).start()
+ */
+function add (nodes) {
+  nodes = isArray(nodes) ? nodes : slice.call(arguments);
+  if (!nodes.length) return null
+  else if (nodes.length === 1) return nodes[0]
+
+  var context = nodes[0].context;
+  var input = context.createGain();
+  var output = context.createGain();
+  nodes.forEach(function (node) {
+    if (node.numberOfInputs) input.connect(node);
+    node.connect(output);
+  });
+  input.connect = output.connect.bind(output);
+  return lifecycle(input, nodes)
+}
+
+/**
+ * Plug something (a value, a node) into a node parameter
+ * @param {String} name - the parameter name
+ * @param {AudioNode|Object} value - the value (can be a signal)
+ * @param {AudioNode} target - the target audio node
+ * @return {AudioNode} the modulator signal if any or undefined
+ * @private
+ */
+function plug (name, value, node) {
+  if (typeof value === 'undefined') {
+    // do nothing
+  } else if (typeof value.connect === 'function') {
+    node[name].value = 0;
+    value.connect(node[name]);
+    return value
+  } else if (node[name]) {
+    node[name].value = value;
+  }
+}
+
+/**
+ * Override start and stop functions (if necessary) to handle node dependencies
+ * lifecycle.
+ * @private
+ */
+function lifecycle (node, dependents) {
+  var deps = dependents.filter(function (dep) {
+    return dep && typeof dep.start === 'function'
+  });
+  if (deps.length) {
+    var _start = node.start;
+    var _stop = node.stop;
+    node.start = function (time) {
+      var res = _start ? _start.call(node, time) : void 0;
+      deps.forEach(function (d) { if (d.start) d.start(time); });
+      return res
+    };
+    node.stop = function (time) {
+      var res = _stop ? _stop.call(node, time) : void 0;
+      deps.forEach(function (d) { if (d.stop) d.stop(time); });
+      return res
+    };
+  }
+  return node
+}
+
+/** @module signals */
+
+/**
+ * Create a gain node
+ * @param {Float|AudioNode} gain - the gain value or modulator
+ * @param {Object} options - (Optional) options may include:
+ *
+ * - context: the audio context to use to create the signal
+ *
+ * @return {AudioNode} the gain node
+ * @example
+ * connect(sine(440), gain(0.3))
+ * @example
+ * // with modulation (kind of tremolo)
+ * connect(sine(400), gain(sine(10)))
+ */
+function gain (gain, options) {
+  var amp = context(options).createGain();
+  return lifecycle(amp, [
+    plug('gain', gain, amp)
+  ])
+}
+
+/**
+ * Create a constant signal. Normally you will use it in combination with
+ * envelopes or modulators.
+ *
+ * @param {Integer} value - the value of the constant
+ * @param {Object} options - (Optional) options may include:
+ *
+ * - context: the audio context to use to create the signal
+ *
+ * @return {AudioNode} the constant audio node
+ * @example
+ * sine(constant(440)).start()
+ */
+function constant (value, options) {
+  // TODO: cache buffer
+  var ctx = context(options);
+  var source = ctx.createBufferSource();
+  source.loop = true;
+  source.buffer = ctx.createBuffer(1, 2, ctx.sampleRate);
+  var data = source.buffer.getChannelData(0);
+  data[0] = data[1] = value;
+  return source
+}
+
+/**
+ * Create a signal source. You will use signals to change parameters of a
+ * audio node after starting. See example.
+ * @param {Integer} value - the value of the constant
+ * @param {Object} options - (Optional) options may include:
+ *
+ * - context: the audio context to use to create the signal
+ *
+ * @return {AudioParam} the constant audio node
+ * @example
+ * var freq = signal(440)
+ * sine(freq).start()
+ * freq.value.linearRampToValueAtTime(880, after(5))
+ */
+function signal (value, opts) {
+  return connect(constant(1, opts), gain(value, opts)).start()
+}
+
+/**
+ * Create a node that bypasses the signal
+ * @param {AudioContext} context - (Optional) the audio context
+ * @return {AudioNode} the bypass audio node
+ * @example
+ * connect(sine(300), add(bypass(), dly(0.2)))
+ */
+function bypass (ac) {
+  return context(ac).createGain()
+}
+
+/**
+ * Multiply a signal.
+ * @param {Integer|AudioNode} value - the value
+ * @param {AudioNode} signal - the signal to multiply by
+ * @param {Object} options - (Optional) options may include:
+ *
+ * - context: the audio context to use to create the signal
+ *
+ * @example
+ * // a vibrato effect
+ * sine(440, mult(500, sine(tempo(160))))
+ */
+function mult (value, signal, opts) {
+  return connect(signal, gain(value, opts))
+}
+
+/**
+ * Scale a signal. Given a signal (between -1 and 1) scale it to fit in a range.
+ * @param {Integer} min - the minimum of the range
+ * @param {Integer} max - the minimum of the range
+ * @param {AudioNode} source - the signal to scale
+ * @return {AudioNode} the scaled signal node
+ * @example
+ * // create a frequency envelope between 440 and 880 Hz
+ * sine(scale(440, 880, adsr(0.1, 0.01, 1, 1)))
+ */
+function scale (min, max, source) {
+  var ctx = source;
+  if (source.numberOfInputs) source = connect(constant(1, ctx), source);
+  var delta = max - min;
+  return add(constant(min, ctx), mult(delta, source))
+}
+
+/**
+ * This module provides a concise API over the AudioContext's createOscillator
+ * function
+ * @example
+ * import { sine, lfo, Hz, master } from 'synth-kit'
+ *
+ * master.start(sine(Hz('A4'), { detune: lfo(5, 10) }))
+ * @module oscillators
+ */
+var OPTS = {};
+function toArr (val) { return Array.isArray(val) ? val : [ val ] }
+
+/**
+ * Create an oscillator (an OscillatorNode)
+ * @param {String} type - one of OscillatorNode [types]()
+ * @param {Float|AudioNode} - the frequency (can be a number or a signal)
+ * @param {Object} options - (Optional) Options can include:
+ *
+ * - detune: the detune in cents. Can be a number or a signal (see example)
+ * - context: the audio context to use
+ *
+ * @return {AudioNode} the oscillator
+ * @example
+ * osc('sine', 880)
+ * osc('square', 880, { detune: -10 })
+ * osc('sawtooth', 1600, { detune: lfo(5, 50) }
+ * // any signal can be the detune modulator
+ * osc('sawtooth', 1600, { detune: connect(...) }
+ */
+function osc (type, frequency, opts) {
+  if (!opts) opts = OPTS;
+  var osc = context(opts).createOscillator();
+  osc.type = type || 'sine';
+  return lifecycle(osc, [
+    plug('frequency', frequency, osc),
+    plug('detune', opts.detune, osc)
+  ])
+}
+/**
+ * Create a sine oscillator. An alias for `osc('sine', ...)`
+ * @function
+ * @see osc
+ * @param {Float|AudioNode} frequency - the frequency (can be a number or a signal)
+ * @param {Object} options - (Optional) same as `osc` options
+ * @return {AudioNode} the oscillator
+ * @example
+ * sine(1760)
+ * sine(800, { detune: -50 })
+ */
+const sine = osc.bind(null, 'sine');
+/**
+ * Create a sawtooth oscillator. An alias for `osc('sawtooth', ...)`
+ * @function
+ * @see osc
+ * @param {Float|AudioNode} - the frequency (can be a number or a signal)
+ * @param {Object} options - (Optional) same as `osc` options
+ * @return {AudioNode} the oscillator
+ * @example
+ * saw(1760)
+ * saw(440, { detune: lfo(5, 10) })
+ */
+const saw = osc.bind(null, 'sawtooth');
+/**
+ * Create a square oscillator. An alias for `osc('square', ...)`
+ * @function
+ * @see osc
+ * @param {Float|AudioNode} - the frequency (can be a number or a signal)
+ * @param {Object} options - (Optional) same as `osc` options
+ * @return {AudioNode} the oscillator
+ * @example
+ * square(1760, { context: offline() })
+ */
+const square = osc.bind(null, 'square');
+/**
+ * Create a triangle oscillator. An alias for `osc('triangle', ...)`
+ * @function
+ * @see osc
+ * @param {Float|AudioNode} - the frequency (can be a number or a signal)
+ * @param {Object} options - (Optional) same as `osc` options
+ * @return {AudioNode} the oscillator
+ * @example
+ * triangle(1760, { detune: -10 })
+ */
+const triangle = osc.bind(null, 'triangle');
+
+/**
+ * Create an oscillator bank. It returns a signal composed of the sum of the
+ * individual oscillators.
+ *
+ * @param {Array<Float>} frequencies - an array with the frequencies
+ * @param {Object} options - (Optional) options can include:
+ *
+ * - frequency: if provided, the frequencies will be multiplied by this value
+ * - types: a value or an array of oscillator types. If the array is shorter
+ * than the frequencies array, it's assumed to be circular.
+ * - gains: a value or an array of gain values. If the array is shorter
+ * than the frequencies array, it's assumed to be circular.
+ *
+ * @return {AudioNode}
+ *
+ * @example
+ * // create three sines with unrelated frequencies:
+ * oscBank([1345.387, 435.392, 899.432])
+ * // create three sawtooth with related frequencies:
+ * oscBank([ 1, 2, 2.4 ], { frequency: 400, types: 'sawtooth' })
+ * // create two squares of 400 and 800 and two sawtooths of 600 and 1200
+ * // (the types are cyclic)
+ * oscBank([400, 600, 800, 1200], { types: ['square', 'sawtooth'] })
+ * // specify gains
+ * oscBank([440, 660], { gains: [0.6, 0.2] })
+ */
+function oscBank (freqs, opts) {
+  if (!opts) opts = OPTS;
+  var base = opts.frequency || 1;
+  var gains = toArr(opts.gains || 1);
+  var types = toArr(opts.types || 'sine');
+  var N = opts.normalize === false ? 1 : freqs.length;
+
+  var tl = types.length;
+  var gl = gains.length;
+  return connect(add(freqs.map(function (freq, i) {
+    var src = osc(types[i % tl], base * freq);
+    var g = gains[i % gl];
+    return g === 1 ? src : connect(src, gain(g))
+  })), gain(1 / N))
+}
+
+/**
+ * Create a lfo. It's a decorated oscillator with some goodies to reduce
+ * the boilerplate code with signal modulators
+ *
+ * @param {Integer} freq - the frequency
+ * @param {Integer} amplitude - the amplitude
+ * @param {Options} options - (Optional) Options can include:
+ *
+ * - context: the audio context to be used
+ * - tempo: if provided, the freq parameter is the number of beats inside that tempo
+ *
+ * @example
+ * master.start(sine(300, { detune: lfo(5, 10) }))
+ * // too complicated?
+ * master.start(sine(300, { detune: lfo(4, 10, { tempo: 120 }))
+ */
+function lfo (freq, amp, o) {
+  freq = freq || 7;
+  amp = amp || 1;
+  o = o || OPTS;
+  if (o.tempo) freq = tempo(o.tempo, freq);
+  return mult(amp, osc(o.type || 'sine', freq))
+}
+
+/** @module filters */
+var OPTS$1 = {};
+
+/**
+ * Create a filter (a [BiquadFilterNode](https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode))
+ *
+ * @param {String} type - the filter [type](https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode/type)
+ * @param {Number|AudioNode} frequency - the frequency in hertzs (can be a number or a signal)
+ * @param {Object} options - (Optional) options may include:
+ *
+ * - detune: the detune of the frequency in cents (can be a number or a signal)
+ * - Q: the Q of the filter (can be a number or a signal)
+ * - context: the audio context to use
+ *
+ * @return {AudioNode} the filter
+ * @example
+ * connect(square(800), filter('lowpass', 400))
+ */
+function filter (type, frequency, o) {
+  o = o || OPTS$1;
+  var filter = context(o).createBiquadFilter();
+  filter.type = type || 'lowpass';
+  return lifecycle(filter, [
+    plug('frequency', frequency, filter),
+    plug('Q', o.Q, filter),
+    plug('detune', o.detune, filter)
+  ])
+}
+
+/**
+ * Create a lowpass filter. An alias for `filter('lowpass', ...)`
+ *
+ * @function
+ * @param {Number|AudioNode} frequency - the frequency in hertzs (can be a number or a signal)
+ * @param {Object} options - (Optional) the same options as `filter` function
+ * @return {AudioNode} the lowpass filter
+ * @example
+ * connect(square(800), lowpass(400))
+ * @see filter
+ */
+const lowpass = filter.bind(null, 'lowpass');
+
+/**
+ * Create a hipass filter. An alias for `filter('hipass', ...)`
+ *
+ * @function
+ * @param {Number|AudioNode} frequency - the frequency in hertzs (can be a number or a signal)
+ * @param {Object} options - (Optional) the same options as `filter` function
+ * @return {AudioNode} the hipass filter
+ * @example
+ * connect(square(800), hipass(400))
+ * @see filter
+ */
+const hipass = filter.bind(null, 'highpass');
+
+/**
+ * Create a bandpass filter. An alias for `filter('bandpass', ...)`
+ *
+ * @function
+ * @param {Number|AudioNode} frequency - the frequency in hertzs (can be a number or a signal)
+ * @param {Object} options - (Optional) the same options as `filter` function
+ * @return {AudioNode} the bandpass filter
+ * @example
+ * connect(square(800), bandpass(400))
+ * @see filter
+ */
+const bandpass = filter.bind(null, 'hipass');
+
+/* global XMLHttpRequest */
+/**
+ * This module contains some functions to fetch and decode audio files.
+ *
+ * @module load
+ */
+
+/**
+ * Load a remote audio file and return a promise.
  * @param {String} url
  * @param {AudioContext} context - (Optional)
  * @return {Promise<AudioBuffer>} a promise that resolves to an AudioBuffer
+ * @example
+ * load('sound.mp3').then(function (buffer) {
+ *   sample(buffer, true).start()
+ * }
  */
 function load (url, ac) {
   return fetch(url, 'arraybuffer').then(decodeAudio(ac))
 }
 
 /**
- * Fetch url
+ * Fetch an url and return a promise
  * @param {String} url - the url
  * @param {String} type - can be 'text' or 'arraybuffer'
  * @return {Promise} a promise to the result
@@ -451,6 +841,17 @@ function fetch (url, type) {
   })
 }
 
+/**
+ * Decode an array buffer into an AudioBuffer.
+ * @param {AudioContext} context - (Optional) the context to be used (can be null to use
+ * synth-kit's default audio context)
+ * @param {Array} array - (Optional) the array to be decoded. If not given,
+ * it returns a function that decodes the buffer so it can be chained with
+ * fetch function (see example)
+ * @return {Promise<AudioBuffer>} a promise that resolves to an audio buffer
+ * @example
+ * fecth('sound.mp3').then(decodeAudio())
+ */
 function decodeAudio (ac, arrayBuffer) {
   if (arguments.length === 1) return function (array) { return decodeAudio(ac, array) }
   return new Promise(function (resolve, reject) {
@@ -458,323 +859,50 @@ function decodeAudio (ac, arrayBuffer) {
   })
 }
 
-var slice = Array.prototype.slice;
-var isArray = Array.isArray;
-
-// ROUTING
-// =======
 /**
- * Connect nodes in series: A -> B -> C -> D
- * @param {Array<AudioNode>} nodes - the list of nodes to be connected
- * @return {AudioNode} the resulting audio node
- */
-function connect (nodes) {
-  nodes = isArray(nodes) ? nodes : slice.call(arguments);
-  if (!nodes.length) return null
-  else if (nodes.length === 1) return nodes[0]
-
-  var first = nodes[0];
-  var last = nodes.reduce(function (src, dest$$1) {
-    src.connect(dest$$1);
-    return dest$$1
-  });
-  first.connect = last.connect.bind(last);
-  return lifecycle(first, nodes.slice(1))
-}
-
-/**
- * Connect nodes in parallel in order to add signals. This is one of the
- * routing functions (the other is `connect`).
- * @param {...AudioNode} nodes - the nodes to be connected
- * @return {AudioNode} the resulting audio node
- * @example
- * add(sine(400), sine(401)).start()
- */
-function add (nodes) {
-  nodes = isArray(nodes) ? nodes : slice.call(arguments);
-  if (!nodes.length) return null
-  else if (nodes.length === 1) return nodes[0]
-
-  var context$$1 = nodes[0].context;
-  var input = context$$1.createGain();
-  var output = context$$1.createGain();
-  nodes.forEach(function (node) {
-    if (node.numberOfInputs) input.connect(node);
-    node.connect(output);
-  });
-  input.connect = output.connect.bind(output);
-  return lifecycle(input, nodes)
-}
-
-// SIGNALS
-// =======
-
-/**
- * Create a constant signal. Normally you will use it in combination with
- * envelopes or modulators.
+ * In synth-kit buffers can be generated (with the `gen` function) or
+ * retrieved from an audio file (with the `sample`) function
  *
- * @param {Integer} value - the value of the constant
- * @param {AudioContext} context - (Optional) the audio context
- * @return {AudioNode} the constant audio node
- * @example
- * sine(constant(440)).start()
+ * @module buffers
  */
-function constant (value, ac) {
-  // TODO: cache buffer
-  var ctx = context(ac);
-  var source = ctx.createBufferSource();
-  source.loop = true;
-  source.buffer = ctx.createBuffer(1, 2, ctx.sampleRate);
-  var data = source.buffer.getChannelData(0);
-  data[0] = data[1] = value;
-  return source
-}
+var OPTS$2 = {};
 
 /**
- * Create a signal source. You will use signals to change parameters of a
- * audio node after starting. See example.
- * @param {Integer} value - the value of the constant
- * @param {AudioContext} context - (Optional) the audio context
- * @return {AudioParam} the constant audio node
+ * Create a buffer source (a BufferSourceNode)
+ * @param {Buffer|Function} buffer - the buffer (or a function that returns a buffer)
+ * @param {Object} options - (Optional) options can include:
+ *
+ * - loop: set to true to loop the buffer
+ * - detune: the detune amount (can be a number or a signal)
+ * - context: the audio context to use
+ *
+ * @return {AudioNode} a BufferSourceNode
  * @example
- * var freq = signal(440)
- * sine(freq).start()
- * freq.value.linearRampToValueAtTime(880, after(5))
+ * source(sample('snare.wav')).start()
+ * source(sample('amen-break.mp3'), { loop: true })
  */
-function signal (value, ac) {
-  var mod = context(ac).createGain();
-  mod.gain.value = value;
-  var signal = connect(constant(1), mod);
-  signal.value = mod.gain;
-  signal.start();
-  return signal
-}
-
-/**
- * Create a node that bypasses the signal
- * @param {AudioContext} context - (Optional) the audio context
- * @return {AudioNode} the bypass audio node
- * @example
- * connect(sine(300), add(bypass(), dly(0.2)))
- */
-function bypass (ac) {
-  return context(ac).createGain()
-}
-
-/**
- * Create a gain node
- * @param {Float|AudioNode} gain - the gain value or modulator
- * @param {AudioContext} context - (Optional) the audio context
- * @return {AudioNode} the gain node
- * @example
- * connect(sine(440), gain(0.3))
- * @example
- * // with modulation (kind of tremolo)
- * connect(sine(400), gain(sine(10)))
- */
-function gain (gain, ac) {
-  var amp = context(ac).createGain();
-  return lifecycle(amp, [
-    plug('gain', gain, amp)
+function source (buffer, o) {
+  o = o || OPTS$2;
+  var src = context(o).createBufferSource();
+  src.buffer = isA('function', buffer) ? buffer() : buffer;
+  if (!src.buffer) console.warn('Buffer not ready.');
+  if (o.loop) src.loop = true;
+  return lifecycle(src, [
+    plug('detune', o.detune, src)
   ])
 }
 
 /**
- * Multiply a signal.
- * @param {Integer|AudioNode} value - the value
- * @param {AudioNode} signal - the signal to multiply by
- * @example
- * // a vibrato effect
- * sine(440, mult(500, sine(tempo(160))))
- */
-function mult (value, signal) {
-  return connect(signal, gain(value))
-}
-
-/**
- * Scale a signal. Given a signal (between -1 and 1) scale it to fit in a range.
- * @param {Integer} min - the minimum of the range
- * @param {Integer} max - the minimum of the range
- * @param {AudioNode} signal - the signal to scale
- * @param {AudioContext} context - the optional audio context
- * @return {AudioNode} the scaled signal node
- * @example
- * // create a frequency envelope between 440 and 880 Hz
- * sine(scale(440, 880, adsr(0.1, 0.01, 1, 1)))
- */
-function scale (min, max, source, ctx) {
-  if (source.numberOfInputs) source = connect(constant(1, ctx), source);
-  var delta = max - min;
-  return add(constant(min, ctx), mult(delta, source))
-}
-
-// OSCILLATORS
-// ===========
-
-/**
- * Create an OscillatorNode
- * @param {String} type - one of OscillatorNode [types]()
- * @param {Float|AudioNode} - the frequency (can be a number or a signal)
- * @param {Float|AudioNode} - the detune in cents (can be a number or a signal)
- * @param {AudioContext} context - the optional audio context
- * @return {AudioNode} the oscillator
- * @example
- * osc('sine', 880)
- * osc('sawtooth', 1600, mult(50, sine(5)))
- */
-function osc (type, frequency, detune, ac) {
-  var osc = context(ac).createOscillator();
-  osc.type = type || 'sine';
-  return lifecycle(osc, [
-    plug('frequency', frequency, osc),
-    plug('detune', detune, osc)
-  ])
-}
-/**
- * Create a sine oscillator. An alias for `osc('sine', ...)`
- * @function
- * @see osc
- * @param {Float|AudioNode} - the frequency (can be a number or a signal)
- * @param {Float|AudioNode} - the detune in cents (can be a number or a signal)
- * @param {AudioContext} context - the optional audio context
- * @return {AudioNode} the oscillator
- * @example
- * sine(1760)
- */
-const sine = osc.bind(null, 'sine');
-/**
- * Create a sawtooth oscillator. An alias for `osc('sawtooth', ...)`
- * @function
- * @see osc
- * @param {Float|AudioNode} - the frequency (can be a number or a signal)
- * @param {Float|AudioNode} - the detune in cents (can be a number or a signal)
- * @param {AudioContext} context - the optional audio context
- * @return {AudioNode} the oscillator
- * @example
- * saw(1760)
- */
-const saw = osc.bind(null, 'sawtooth');
-/**
- * Create a square oscillator. An alias for `osc('square', ...)`
- * @function
- * @see osc
- * @param {Float|AudioNode} - the frequency (can be a number or a signal)
- * @param {Float|AudioNode} - the detune in cents (can be a number or a signal)
- * @param {AudioContext} context - the optional audio context
- * @return {AudioNode} the oscillator
- * @example
- * square(1760)
- */
-const square = osc.bind(null, 'square');
-/**
- * Create a triangle oscillator. An alias for `osc('triangle', ...)`
- * @function
- * @see osc
- * @param {Float|AudioNode} - the frequency (can be a number or a signal)
- * @param {Float|AudioNode} - the detune in cents (can be a number or a signal)
- * @param {AudioContext} context - the optional audio context
- * @return {AudioNode} the oscillator
- * @example
- * triangle(1760)
- */
-const triangle = osc.bind(null, 'triangle');
-
-/**
- * Create an oscillator bank. It returns a signal composed of the sum of the
- * individual oscillators.
- *
- * The idea is provide a collection of frequencies and map them to oscillators.
- * The frequencies can be expressed with an array of frequencies or with a
- * base frequency and an array of relative numbers. Types can be a single value
- * for all oscillators, or a list. Finally an optional list of gains is admitted.
- *
- * @param {Float} base - the base frequency. Can be null
- * @param {Array<Float>} frequencies - an array with the frequencies
- * @param {Array<String>} types - the array of types
- * @param {Array<Number>} gains - the array of gains
- * @param {AudioContext} context - the optional audio context
- * @return {AudioNode}
- *
- * @example
- * // create three sines with unrelated frequencies:
- * oscBank(null, [1345.387, 435.392, 899.432], 'sine')
- * // create three sawtooth with related frequencies:
- * oscBank(440, [ 1, 2, 2.4 ], 'sawtooth')
- * // different types
- * oscBank(null, [400, 600], ['square', 'sawtooth'])
- * // specify gains
- * oscBank(null, [440, 660], 'sine', [0.6, 0.2])
- */
-function oscBank (base, freqs, types, gains, ac) {
-  var g, src;
-  if (!isNum$1(base)) base = 1;
-  if (!isArray(freqs)) freqs = [ 1 ];
-  if (!isArray(gains)) gains = [ 1 ];
-  if (!isArray(types)) types = [ 'sine' ];
-
-  var tl = types.length;
-  var gl = gains.length;
-  return connect(add(freqs.map(function (freq, i) {
-    src = osc(types[i % tl], base * freq);
-    g = gains[i % gl];
-    return g === 1 ? src : connect(src, gain(g))
-  })), gain(1 / freqs.length))
-}
-
-// FILTERS
-// =======
-
-/**
- * Create a filter (a [BiquadFilterNode](https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode))
- * @param {String} type - the filter [type](https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode/type)
- * @param {Number|AudioNode} frequency - the frequency in hertzs (can be a number or a signal)
- * @param {Number|AudioNode} Q - the Q of the filter (can be a number or a signal)
- * @param {Number|AudioNode} detune - the detune in cents (can be a number or a signal)
- * @param {AudioContext} context - the optional audio context
- * @return {AudioNode} the filter
- * @example
- * connect(square(800), filter('lowpass', 400))
- */
-function filter (type, frequency, Q, detune, ac) {
-  var filter = context(ac).createBiquadFilter();
-  filter.type = type;
-  return lifecycle(filter, [
-    plug('frequency', frequency, filter),
-    plug('Q', Q, filter),
-    plug('detune', detune, filter)
-  ])
-}
-const lowpass = filter.bind(null, 'lowpass');
-const hipass = filter.bind(null, 'highpass');
-const bandpass = filter.bind(null, 'hipass');
-
-// MODULATORS
-// ==========
-
-/**
- * Detune modulator. Can be connected to any `detune` param.
- * Basically is a boilerplate code reductor.
- * @param {Integer} cents - how much
- * @param {Integer|AudioNode} modulator - The modulator. If it's a number,
- * is the frequency of a sine oscillator.
- * @param {AudioContext} context - the optional audio context
- * @example
- * sine(300, detune(200, adshr(0.1, 0.2, 0.5, 1))))
- * sine(300, detune(50, tempo(20)))
- */
-function detune (cents, mod, ac) {
-  if (!isNum$1(cents)) cents = 50;
-  if (isNum$1(mod)) mod = sine(mod, ac);
-  return mult(cents, mod)
-}
-
-/**
- * Get a remote audio sample. You get a function that returns an AudioBuffer
+ * Fetch a remote audio sample. You get a function that returns an AudioBuffer
  * when loaded or null otherwise. Or you can chain like a promise.
  *
  * @param {String} url - the url of the file
- * @param {AudioContext} context - (Optional) the audio context
+ * @param {Object} options - (Optional) options can include:
+ *
+ * - context: the audio context to use
+ *
  * @return {Function} a function the returns the buffer
+ *
  * @example
  * source(sample('server.com/audio-file.mp3')).start()
  * @example
@@ -786,41 +914,29 @@ function detune (cents, mod, ac) {
 
 
 /**
- * Create a buffer source node.
- * @param {Buffer|Function} buffer - the buffer (or a function that returns a buffer)
- * @param {Boolean} loop - (Optional) loop the buffer or not (defaults to false)
- * @param {Integer|Node} detune - (Optional) the detune value or modulator
- * @param {AudioContext} context - (Optional) the audio context
- * @return {AudioNode} BufferSourceNode
- */
-function source (buffer, loop, detune, ac) {
-  var src = context(ac).createBufferSource();
-  src.buffer = isFn(buffer) ? buffer() : buffer;
-  if (!src.buffer) console.warn('Buffer not ready.');
-  src.loop = loop;
-  return lifecycle(src, [
-    plug('detune', detune, src)
-  ])
-}
-
-/**
  * Generate a BufferNode. It returns a no-parameter function that
  * returns a buffer. This way, it's easy to memoize (cache) buffers.
  *
  * @param {Function|Array<Function>} generators - a generator or a list of
  * generators (to create a buffer with multiple channels)
  * @param {Integer} samples - the length in samples
- * @param {Boolean} reverse - (Optional) true if you want the buffer reversed
+ * @param {Object} options - (Optional) options can include:
+ *
+ * - reverse: set to true to reverse the generated buffer
+ * - context: the audio context to use
+ *
  * @return {Function} a function with no parameters that returns the desired buffer
  */
-function generate (generators, samples, reverse, ac) {
+function gen (generators, samples, o) {
+  samples = samples || 2;
+  o = o || OPTS$2;
   return function () {
     if (!Array.isArray(generators)) generators = [ generators ];
-    samples = samples || 0;
-    reverse = reverse === true;
+    var reverse = o.reverse;
     var numOfChannels = generators.length;
+    var ctx = context(o);
 
-    var buffer = context(ac).createBuffer(numOfChannels, samples, samplingRate(ac));
+    var buffer = ctx.createBuffer(numOfChannels, samples, samplingRate(ctx));
     for (var ch = 0; ch < numOfChannels; ch++) {
       generateData(generators[ch], buffer.getChannelData(ch), samples, reverse);
     }
@@ -837,24 +953,24 @@ function generateData (generator, data, samples, reverse) {
 /**
  * White noise source node.
  * @param {Integer} length - lenth in samples
- * @param {Boolean} loop - (Optional) infinite duration
- * @param {AudioContext} context - (Optional) audio context
+ * @param {Object} options - (Optional) the same options that `source` function
  * @return {AudioNode} the white noise audio node generator
+ * @see source
  * @example
  * connect(white(seconds(1)), perc(), dest()).start()
  */
-function white (samples, loop, ac) {
-  if (!isNum$1(samples)) samples = samplingRate(ac);
-  loop = loop !== false;
-  return source(generate(whiteGen, samples, false, ac), loop, 0, ac)
+function white (samples, options) {
+  if (!isA('number', samples)) samples = samplingRate(options);
+  return source(gen(whiteGen, samples, options), options)
 }
 function whiteGen () { return Math.random() * 2 - 1 }
 
+/** @module envelopes */
 function schedule (param, shape, times, types, ac) {
-  return function (when$$1, delay) {
+  return function (time, delay) {
     console.log(shape, times, types);
     var type;
-    var time = toTime(context, when$$1, delay);
+    time = when(time, delay, ac);
     var lt = times.length;
     var tp = types.length;
     shape.forEach(function (value, i) {
@@ -876,7 +992,7 @@ function env (shape, times, types, ac) {
   return gain$$1
 }
 
-function toNum (num, def) { return isNum$1(num) ? num : def }
+function toNum (num, def) { return isA('number', num) ? num : def }
 /**
  * An attack-decay-sustain-(hold)-decay envelope
  */
@@ -914,35 +1030,55 @@ function freqEnv (freq, octs, a, d, s, r, ac) {
   return scale(freq, freq * Math.pow(2, octs), adshr(a, d, s, 0, r, ac))
 }
 
-function mix (wet, fx) {
-  if (!isNum$1(wet)) wet = 0.5;
-  return add(gain(1 - 0.5), connect(fx, gain(wet)))
-}
-
-function bus (fx) {
-  return function (wet) { return mix(wet, fx) }
+/** @module effects */
+/**
+ * Mix an effect with the signal. Can be partially applied to create an
+ * effect bus.
+ * @param {Number} wet - the amount of effect (0-1)
+ * @param {AudioNode} fx - the effect unit
+ * @return {AudioNode}
+ * @example
+ * mix(dB(-3), delay(ms(800)))
+ * @example
+ * // create an effect bus
+ * var fxs = mix(connect(reverb(0.1), delay([ms(20), ms(21)])))
+ * connect(sine(300), fxs(0.2))
+ */
+function mix (fx, wet, norm) {
+  if (arguments.length === 1) return function (w, n) { return mix(fx, w, n) }
+  if (!isA('number', wet)) wet = 0.5;
+  var dry = norm === false ? 1 : 1 - wet;
+  return add(gain(dry), connect(fx, gain(wet)))
 }
 
 /**
  * Create a feedback loop.
  * @param {Integer} amount - the amount of signal
  * @param {AudioNode} node - the node to feedback
- * @param {AudioNode} ret - (Optional) the return fx
- * @param {AudioContext} context - (Optional) the audio context
+ * @param {Object} options - (Optional) options may include:
+ *
+ * - context: the audio context to use
+ *
+ * @return {AudioNode} the original node (with a feedback loop)
  */
-function feedback (amount, signal$$1, fx, ac) {
-  fx = fx || bypass(ac);
-  var feed = gain(amount, ac);
-  connect(fx, signal$$1, feed);
-  feed.connect(fx);
-  return signal$$1
+function feedback (amount, node, options) {
+  var feed = gain(amount, options);
+  node.connect(feed);
+  feed.connect(node);
+  return node
 }
 
+/**
+ * Create a tremolo
+ */
 function tremolo (rate, type, ac) {
   type = type || 'sine';
   return gain(osc(type, rate, ac), ac)
 }
 
+/**
+ * Create a delay (a DelayNode object)
+ */
 function dly (time, ac) {
   var dly = context(ac).createDelay(5);
   return lifecycle(dly, [
@@ -950,12 +1086,16 @@ function dly (time, ac) {
   ])
 }
 
+/**
+ * A mono or stereo delay with filtered feedback
+ */
 function delay (time, filter$$1, feedAmount, ac) {
-  if (!isNum$1(feedAmount)) feedAmount = 0.3;
-  filter$$1 = isNum$1(filter$$1) ? lowpass(filter$$1, null, null, ac) : filter$$1 || bypass(ac);
+  if (!isA('number', feedAmount)) feedAmount = 0.3;
+  filter$$1 = isA('number', filter$$1) ? lowpass(filter$$1, null, null, ac) : filter$$1 || bypass(ac);
   return feedback(feedAmount, dly(time, ac), filter$$1, ac)
 }
 
+/** @module instrument */
 var slice$1 = Array.prototype.slice;
 
 /**
@@ -991,7 +1131,7 @@ function withOptions (fn, config) {
   config = config || {};
   config.toOptions = config.toOptions || freqAndContextToOpts;
   return function (options) {
-    if (!isObj(options)) options = config.toOptions.apply(null, arguments);
+    if (!isA('object', options)) options = config.toOptions.apply(null, arguments);
     return fn(Object.assign({}, config.defaults, options))
   }
 }
@@ -1046,11 +1186,11 @@ function inst (synth, destination, maxVoices) {
   var i = {};
   var voices = initVoices(maxVoices);
   i.start = function (value, time, delay, duration) {
-    var node = isFn(synth) ? synth(value) : value;
+    var node = isA('function', synth) ? synth(value) : value;
     if (destination) node.connect(destination);
 
     trackNode(voices, node);
-    time = when(time, delay, contextOf(destination));
+    time = when(time, delay, context(destination));
     node.start(time);
     if (duration) node.stop(time + duration);
     return node
@@ -1098,25 +1238,22 @@ function on (target, event, callback) {
 
 // trigger an event
 function trigger (target, event /*, ...values */) {
-  if (!isFn(target['on' + event])) return
+  if (!isA('function', target['on' + event])) return
   var args = slice$1.call(arguments, 2);
   target['on' + event].apply(null, args);
-  if (isFn(target.onevent)) target.onevent.apply(null, args);
+  if (isA('function', target.onevent)) target.onevent.apply(null, args);
 }
 
 exports.context = context;
 exports.now = now;
 exports.dest = dest;
 exports.samplingRate = samplingRate;
-exports.seconds = seconds;
+exports.timeToSamples = timeToSamples;
 exports.tempo = tempo;
 exports.note = note;
 exports.hz = hz;
 exports.dB = dB;
 exports.gainToDb = gainToDb;
-exports.load = load;
-exports.decodeAudio = decodeAudio;
-exports.fetch = fetch;
 exports.connect = connect;
 exports.add = add;
 exports.constant = constant;
@@ -1131,19 +1268,21 @@ exports.saw = saw;
 exports.square = square;
 exports.triangle = triangle;
 exports.oscBank = oscBank;
+exports.lfo = lfo;
 exports.filter = filter;
 exports.lowpass = lowpass;
 exports.hipass = hipass;
 exports.bandpass = bandpass;
-exports.detune = detune;
-exports.generate = generate;
+exports.gen = gen;
 exports.source = source;
 exports.white = white;
+exports.load = load;
+exports.decodeAudio = decodeAudio;
+exports.fetch = fetch;
 exports.adshr = adshr;
 exports.perc = perc;
 exports.freqEnv = freqEnv;
 exports.mix = mix;
-exports.bus = bus;
 exports.feedback = feedback;
 exports.tremolo = tremolo;
 exports.dly = dly;

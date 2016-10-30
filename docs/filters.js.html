@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>buffers.js - Postman Documentation</title>
+    <title>filters.js - Postman Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -28,7 +28,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">buffers.js</h1>
+    <h1 class="page-title">filters.js</h1>
     
 
     
@@ -38,121 +38,75 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>/**
- * In synth-kit buffers can be generated (with the `gen` function) or
- * retrieved from an audio file (with the `sample`) function
- *
- * @module buffers
- */
-import { context, samplingRate } from './context'
-import { isA } from './units'
-import { lifecycle, plug } from './routing'
-import { load } from './load'
+            <pre class="prettyprint source linenums"><code>/** @module filters */
+import { context } from './context'
+import { plug, lifecycle } from './routing'
 var OPTS = {}
 
 /**
- * Create a buffer source (a BufferSourceNode)
- * @param {Buffer|Function} buffer - the buffer (or a function that returns a buffer)
- * @param {Object} options - (Optional) options can include:
+ * Create a filter (a [BiquadFilterNode](https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode))
  *
- * - loop: set to true to loop the buffer
- * - detune: the detune amount (can be a number or a signal)
+ * @param {String} type - the filter [type](https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode/type)
+ * @param {Number|AudioNode} frequency - the frequency in hertzs (can be a number or a signal)
+ * @param {Object} options - (Optional) options may include:
+ *
+ * - detune: the detune of the frequency in cents (can be a number or a signal)
+ * - Q: the Q of the filter (can be a number or a signal)
  * - context: the audio context to use
  *
- * @return {AudioNode} a BufferSourceNode
+ * @return {AudioNode} the filter
  * @example
- * source(sample('snare.wav')).start()
- * source(sample('amen-break.mp3'), { loop: true })
+ * connect(square(800), filter('lowpass', 400))
  */
-export function source (buffer, o) {
+export function filter (type, frequency, o) {
   o = o || OPTS
-  var src = context(o).createBufferSource()
-  src.buffer = isA('function', buffer) ? buffer() : buffer
-  if (!src.buffer) console.warn('Buffer not ready.')
-  if (o.loop) src.loop = true
-  return lifecycle(src, [
-    plug('detune', o.detune, src)
+  var filter = context(o).createBiquadFilter()
+  filter.type = type || 'lowpass'
+  return lifecycle(filter, [
+    plug('frequency', frequency, filter),
+    plug('Q', o.Q, filter),
+    plug('detune', o.detune, filter)
   ])
 }
 
 /**
- * Fetch a remote audio sample. You get a function that returns an AudioBuffer
- * when loaded or null otherwise. Or you can chain like a promise.
+ * Create a lowpass filter. An alias for `filter('lowpass', ...)`
  *
- * @param {String} url - the url of the file
- * @param {Object} options - (Optional) options can include:
- *
- * - context: the audio context to use
- *
- * @return {Function} a function the returns the buffer
- *
+ * @function
+ * @param {Number|AudioNode} frequency - the frequency in hertzs (can be a number or a signal)
+ * @param {Object} options - (Optional) the same options as `filter` function
+ * @return {AudioNode} the lowpass filter
  * @example
- * source(sample('server.com/audio-file.mp3')).start()
- * @example
- * // use the Promise like interface
- * sample('audio-file.mp3').then(function (buffer) {
- *     source(buffer).start()
- * })
+ * connect(square(800), lowpass(400))
+ * @see filter
  */
-export function sample (url, opts) {
-  var bf = null
-  function buffer () { return bf }
-  var promise = load(url, opts).then(function (result) { bf = result })
-  buffer.then = promise.then.bind(promise)
-  return buffer
-}
+export const lowpass = filter.bind(null, 'lowpass')
 
 /**
- * Generate a BufferNode. It returns a no-parameter function that
- * returns a buffer. This way, it's easy to memoize (cache) buffers.
+ * Create a hipass filter. An alias for `filter('hipass', ...)`
  *
- * @param {Function|Array&lt;Function>} generators - a generator or a list of
- * generators (to create a buffer with multiple channels)
- * @param {Integer} samples - the length in samples
- * @param {Object} options - (Optional) options can include:
- *
- * - reverse: set to true to reverse the generated buffer
- * - context: the audio context to use
- *
- * @return {Function} a function with no parameters that returns the desired buffer
+ * @function
+ * @param {Number|AudioNode} frequency - the frequency in hertzs (can be a number or a signal)
+ * @param {Object} options - (Optional) the same options as `filter` function
+ * @return {AudioNode} the hipass filter
+ * @example
+ * connect(square(800), hipass(400))
+ * @see filter
  */
-export function gen (generators, samples, o) {
-  samples = samples || 2
-  o = o || OPTS
-  return function () {
-    if (!Array.isArray(generators)) generators = [ generators ]
-    var reverse = o.reverse
-    var numOfChannels = generators.length
-    var ctx = context(o)
-
-    var buffer = ctx.createBuffer(numOfChannels, samples, samplingRate(ctx))
-    for (var ch = 0; ch &lt; numOfChannels; ch++) {
-      generateData(generators[ch], buffer.getChannelData(ch), samples, reverse)
-    }
-    return buffer
-  }
-}
-
-function generateData (generator, data, samples, reverse) {
-  for (var i = 0; i &lt; samples; i++) {
-    data[i] = generator(reverse ? samples - i : i)
-  }
-}
+export const hipass = filter.bind(null, 'highpass')
 
 /**
- * White noise source node.
- * @param {Integer} length - lenth in samples
- * @param {Object} options - (Optional) the same options that `source` function
- * @return {AudioNode} the white noise audio node generator
- * @see source
+ * Create a bandpass filter. An alias for `filter('bandpass', ...)`
+ *
+ * @function
+ * @param {Number|AudioNode} frequency - the frequency in hertzs (can be a number or a signal)
+ * @param {Object} options - (Optional) the same options as `filter` function
+ * @return {AudioNode} the bandpass filter
  * @example
- * connect(white(seconds(1)), perc(), dest()).start()
+ * connect(square(800), bandpass(400))
+ * @see filter
  */
-export function white (samples, options) {
-  if (!isA('number', samples)) samples = samplingRate(options)
-  return source(gen(whiteGen, samples, options), options)
-}
-function whiteGen () { return Math.random() * 2 - 1 }
+export const bandpass = filter.bind(null, 'hipass')
 </code></pre>
         </article>
     </section>

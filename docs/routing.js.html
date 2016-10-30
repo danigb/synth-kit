@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>buffers.js - Postman Documentation</title>
+    <title>routing.js - Postman Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -28,7 +28,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">buffers.js</h1>
+    <h1 class="page-title">routing.js</h1>
     
 
     
@@ -39,120 +39,103 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>/**
- * In synth-kit buffers can be generated (with the `gen` function) or
- * retrieved from an audio file (with the `sample`) function
+ * This module provides two ways to route nodes:
  *
- * @module buffers
+ * - In series: A -> B -> C -> D, using the `connect` function
+ * - In parallel: in -> [A, B, C] -> out, using the `add` function
+ * @module routing
  */
-import { context, samplingRate } from './context'
-import { isA } from './units'
-import { lifecycle, plug } from './routing'
-import { load } from './load'
-var OPTS = {}
+var slice = Array.prototype.slice
+var isArray = Array.isArray
 
 /**
- * Create a buffer source (a BufferSourceNode)
- * @param {Buffer|Function} buffer - the buffer (or a function that returns a buffer)
- * @param {Object} options - (Optional) options can include:
- *
- * - loop: set to true to loop the buffer
- * - detune: the detune amount (can be a number or a signal)
- * - context: the audio context to use
- *
- * @return {AudioNode} a BufferSourceNode
- * @example
- * source(sample('snare.wav')).start()
- * source(sample('amen-break.mp3'), { loop: true })
+ * Connect nodes in series: A -> B -> C -> D.
+ * @param {Array&lt;AudioNode>} nodes - the list of nodes to be connected
+ * @return {AudioNode} the resulting audio node
  */
-export function source (buffer, o) {
-  o = o || OPTS
-  var src = context(o).createBufferSource()
-  src.buffer = isA('function', buffer) ? buffer() : buffer
-  if (!src.buffer) console.warn('Buffer not ready.')
-  if (o.loop) src.loop = true
-  return lifecycle(src, [
-    plug('detune', o.detune, src)
-  ])
+export function connect (nodes) {
+  nodes = isArray(nodes) ? nodes : slice.call(arguments)
+  if (!nodes.length) return null
+  else if (nodes.length === 1) return nodes[0]
+
+  var first = nodes[0]
+  var last = nodes.reduce(function (src, dest) {
+    src.connect(dest)
+    return dest
+  })
+  first.connect = last.connect.bind(last)
+  return lifecycle(first, nodes.slice(1))
 }
 
 /**
- * Fetch a remote audio sample. You get a function that returns an AudioBuffer
- * when loaded or null otherwise. Or you can chain like a promise.
- *
- * @param {String} url - the url of the file
- * @param {Object} options - (Optional) options can include:
- *
- * - context: the audio context to use
- *
- * @return {Function} a function the returns the buffer
- *
+ * Connect nodes in parallel in order to add signals. This is one of the
+ * routing functions (the other is `connect`).
+ * @param {...AudioNode} nodes - the nodes to be connected
+ * @return {AudioNode} the resulting audio node
  * @example
- * source(sample('server.com/audio-file.mp3')).start()
- * @example
- * // use the Promise like interface
- * sample('audio-file.mp3').then(function (buffer) {
- *     source(buffer).start()
- * })
+ * add(sine(400), sine(401)).start()
  */
-export function sample (url, opts) {
-  var bf = null
-  function buffer () { return bf }
-  var promise = load(url, opts).then(function (result) { bf = result })
-  buffer.then = promise.then.bind(promise)
-  return buffer
+export function add (nodes) {
+  nodes = isArray(nodes) ? nodes : slice.call(arguments)
+  if (!nodes.length) return null
+  else if (nodes.length === 1) return nodes[0]
+
+  var context = nodes[0].context
+  var input = context.createGain()
+  var output = context.createGain()
+  nodes.forEach(function (node) {
+    if (node.numberOfInputs) input.connect(node)
+    node.connect(output)
+  })
+  input.connect = output.connect.bind(output)
+  return lifecycle(input, nodes)
 }
 
 /**
- * Generate a BufferNode. It returns a no-parameter function that
- * returns a buffer. This way, it's easy to memoize (cache) buffers.
- *
- * @param {Function|Array&lt;Function>} generators - a generator or a list of
- * generators (to create a buffer with multiple channels)
- * @param {Integer} samples - the length in samples
- * @param {Object} options - (Optional) options can include:
- *
- * - reverse: set to true to reverse the generated buffer
- * - context: the audio context to use
- *
- * @return {Function} a function with no parameters that returns the desired buffer
+ * Plug something (a value, a node) into a node parameter
+ * @param {String} name - the parameter name
+ * @param {AudioNode|Object} value - the value (can be a signal)
+ * @param {AudioNode} target - the target audio node
+ * @return {AudioNode} the modulator signal if any or undefined
+ * @private
  */
-export function gen (generators, samples, o) {
-  samples = samples || 2
-  o = o || OPTS
-  return function () {
-    if (!Array.isArray(generators)) generators = [ generators ]
-    var reverse = o.reverse
-    var numOfChannels = generators.length
-    var ctx = context(o)
+export function plug (name, value, node) {
+  if (typeof value === 'undefined') {
+    // do nothing
+  } else if (typeof value.connect === 'function') {
+    node[name].value = 0
+    value.connect(node[name])
+    return value
+  } else if (node[name]) {
+    node[name].value = value
+  }
+}
 
-    var buffer = ctx.createBuffer(numOfChannels, samples, samplingRate(ctx))
-    for (var ch = 0; ch &lt; numOfChannels; ch++) {
-      generateData(generators[ch], buffer.getChannelData(ch), samples, reverse)
+/**
+ * Override start and stop functions (if necessary) to handle node dependencies
+ * lifecycle.
+ * @private
+ */
+export function lifecycle (node, dependents) {
+  var deps = dependents.filter(function (dep) {
+    return dep &amp;&amp; typeof dep.start === 'function'
+  })
+  if (deps.length) {
+    var _start = node.start
+    var _stop = node.stop
+    node.start = function (time) {
+      var res = _start ? _start.call(node, time) : void 0
+      deps.forEach(function (d) { if (d.start) d.start(time) })
+      return res
     }
-    return buffer
+    node.stop = function (time) {
+      var res = _stop ? _stop.call(node, time) : void 0
+      deps.forEach(function (d) { if (d.stop) d.stop(time) })
+      return res
+    }
   }
+  return node
 }
-
-function generateData (generator, data, samples, reverse) {
-  for (var i = 0; i &lt; samples; i++) {
-    data[i] = generator(reverse ? samples - i : i)
-  }
-}
-
-/**
- * White noise source node.
- * @param {Integer} length - lenth in samples
- * @param {Object} options - (Optional) the same options that `source` function
- * @return {AudioNode} the white noise audio node generator
- * @see source
- * @example
- * connect(white(seconds(1)), perc(), dest()).start()
- */
-export function white (samples, options) {
-  if (!isA('number', samples)) samples = samplingRate(options)
-  return source(gen(whiteGen, samples, options), options)
-}
-function whiteGen () { return Math.random() * 2 - 1 }
 </code></pre>
         </article>
     </section>

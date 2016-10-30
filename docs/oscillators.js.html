@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>buffers.js - Postman Documentation</title>
+    <title>oscillators.js - Postman Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -28,7 +28,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">buffers.js</h1>
+    <h1 class="page-title">oscillators.js</h1>
     
 
     
@@ -39,120 +39,159 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>/**
- * In synth-kit buffers can be generated (with the `gen` function) or
- * retrieved from an audio file (with the `sample`) function
+ * This module provides a concise API over the AudioContext's createOscillator
+ * function
+ * @example
+ * import { sine, lfo, Hz, master } from 'synth-kit'
  *
- * @module buffers
+ * master.start(sine(Hz('A4'), { detune: lfo(5, 10) }))
+ * @module oscillators
  */
-import { context, samplingRate } from './context'
-import { isA } from './units'
-import { lifecycle, plug } from './routing'
-import { load } from './load'
+import { tempo } from './units'
+import { context } from './context'
+import { gain, mult } from './signals'
+import { connect, add, plug, lifecycle } from './routing'
 var OPTS = {}
+function toArr (val) { return Array.isArray(val) ? val : [ val ] }
 
 /**
- * Create a buffer source (a BufferSourceNode)
- * @param {Buffer|Function} buffer - the buffer (or a function that returns a buffer)
- * @param {Object} options - (Optional) options can include:
+ * Create an oscillator (an OscillatorNode)
+ * @param {String} type - one of OscillatorNode [types]()
+ * @param {Float|AudioNode} - the frequency (can be a number or a signal)
+ * @param {Object} options - (Optional) Options can include:
  *
- * - loop: set to true to loop the buffer
- * - detune: the detune amount (can be a number or a signal)
+ * - detune: the detune in cents. Can be a number or a signal (see example)
  * - context: the audio context to use
  *
- * @return {AudioNode} a BufferSourceNode
+ * @return {AudioNode} the oscillator
  * @example
- * source(sample('snare.wav')).start()
- * source(sample('amen-break.mp3'), { loop: true })
+ * osc('sine', 880)
+ * osc('square', 880, { detune: -10 })
+ * osc('sawtooth', 1600, { detune: lfo(5, 50) }
+ * // any signal can be the detune modulator
+ * osc('sawtooth', 1600, { detune: connect(...) }
  */
-export function source (buffer, o) {
-  o = o || OPTS
-  var src = context(o).createBufferSource()
-  src.buffer = isA('function', buffer) ? buffer() : buffer
-  if (!src.buffer) console.warn('Buffer not ready.')
-  if (o.loop) src.loop = true
-  return lifecycle(src, [
-    plug('detune', o.detune, src)
+export function osc (type, frequency, opts) {
+  if (!opts) opts = OPTS
+  var osc = context(opts).createOscillator()
+  osc.type = type || 'sine'
+  return lifecycle(osc, [
+    plug('frequency', frequency, osc),
+    plug('detune', opts.detune, osc)
   ])
 }
+/**
+ * Create a sine oscillator. An alias for `osc('sine', ...)`
+ * @function
+ * @see osc
+ * @param {Float|AudioNode} frequency - the frequency (can be a number or a signal)
+ * @param {Object} options - (Optional) same as `osc` options
+ * @return {AudioNode} the oscillator
+ * @example
+ * sine(1760)
+ * sine(800, { detune: -50 })
+ */
+export const sine = osc.bind(null, 'sine')
+/**
+ * Create a sawtooth oscillator. An alias for `osc('sawtooth', ...)`
+ * @function
+ * @see osc
+ * @param {Float|AudioNode} - the frequency (can be a number or a signal)
+ * @param {Object} options - (Optional) same as `osc` options
+ * @return {AudioNode} the oscillator
+ * @example
+ * saw(1760)
+ * saw(440, { detune: lfo(5, 10) })
+ */
+export const saw = osc.bind(null, 'sawtooth')
+/**
+ * Create a square oscillator. An alias for `osc('square', ...)`
+ * @function
+ * @see osc
+ * @param {Float|AudioNode} - the frequency (can be a number or a signal)
+ * @param {Object} options - (Optional) same as `osc` options
+ * @return {AudioNode} the oscillator
+ * @example
+ * square(1760, { context: offline() })
+ */
+export const square = osc.bind(null, 'square')
+/**
+ * Create a triangle oscillator. An alias for `osc('triangle', ...)`
+ * @function
+ * @see osc
+ * @param {Float|AudioNode} - the frequency (can be a number or a signal)
+ * @param {Object} options - (Optional) same as `osc` options
+ * @return {AudioNode} the oscillator
+ * @example
+ * triangle(1760, { detune: -10 })
+ */
+export const triangle = osc.bind(null, 'triangle')
 
 /**
- * Fetch a remote audio sample. You get a function that returns an AudioBuffer
- * when loaded or null otherwise. Or you can chain like a promise.
+ * Create an oscillator bank. It returns a signal composed of the sum of the
+ * individual oscillators.
  *
- * @param {String} url - the url of the file
+ * @param {Array&lt;Float>} frequencies - an array with the frequencies
  * @param {Object} options - (Optional) options can include:
  *
- * - context: the audio context to use
+ * - frequency: if provided, the frequencies will be multiplied by this value
+ * - types: a value or an array of oscillator types. If the array is shorter
+ * than the frequencies array, it's assumed to be circular.
+ * - gains: a value or an array of gain values. If the array is shorter
+ * than the frequencies array, it's assumed to be circular.
  *
- * @return {Function} a function the returns the buffer
+ * @return {AudioNode}
  *
  * @example
- * source(sample('server.com/audio-file.mp3')).start()
- * @example
- * // use the Promise like interface
- * sample('audio-file.mp3').then(function (buffer) {
- *     source(buffer).start()
- * })
+ * // create three sines with unrelated frequencies:
+ * oscBank([1345.387, 435.392, 899.432])
+ * // create three sawtooth with related frequencies:
+ * oscBank([ 1, 2, 2.4 ], { frequency: 400, types: 'sawtooth' })
+ * // create two squares of 400 and 800 and two sawtooths of 600 and 1200
+ * // (the types are cyclic)
+ * oscBank([400, 600, 800, 1200], { types: ['square', 'sawtooth'] })
+ * // specify gains
+ * oscBank([440, 660], { gains: [0.6, 0.2] })
  */
-export function sample (url, opts) {
-  var bf = null
-  function buffer () { return bf }
-  var promise = load(url, opts).then(function (result) { bf = result })
-  buffer.then = promise.then.bind(promise)
-  return buffer
+export function oscBank (freqs, opts) {
+  if (!opts) opts = OPTS
+  var base = opts.frequency || 1
+  var gains = toArr(opts.gains || 1)
+  var types = toArr(opts.types || 'sine')
+  var N = opts.normalize === false ? 1 : freqs.length
+
+  var tl = types.length
+  var gl = gains.length
+  return connect(add(freqs.map(function (freq, i) {
+    var src = osc(types[i % tl], base * freq)
+    var g = gains[i % gl]
+    return g === 1 ? src : connect(src, gain(g))
+  })), gain(1 / N))
 }
 
 /**
- * Generate a BufferNode. It returns a no-parameter function that
- * returns a buffer. This way, it's easy to memoize (cache) buffers.
+ * Create a lfo. It's a decorated oscillator with some goodies to reduce
+ * the boilerplate code with signal modulators
  *
- * @param {Function|Array&lt;Function>} generators - a generator or a list of
- * generators (to create a buffer with multiple channels)
- * @param {Integer} samples - the length in samples
- * @param {Object} options - (Optional) options can include:
+ * @param {Integer} freq - the frequency
+ * @param {Integer} amplitude - the amplitude
+ * @param {Options} options - (Optional) Options can include:
  *
- * - reverse: set to true to reverse the generated buffer
- * - context: the audio context to use
+ * - context: the audio context to be used
+ * - tempo: if provided, the freq parameter is the number of beats inside that tempo
  *
- * @return {Function} a function with no parameters that returns the desired buffer
+ * @example
+ * master.start(sine(300, { detune: lfo(5, 10) }))
+ * // too complicated?
+ * master.start(sine(300, { detune: lfo(4, 10, { tempo: 120 }))
  */
-export function gen (generators, samples, o) {
-  samples = samples || 2
+export function lfo (freq, amp, o) {
+  freq = freq || 7
+  amp = amp || 1
   o = o || OPTS
-  return function () {
-    if (!Array.isArray(generators)) generators = [ generators ]
-    var reverse = o.reverse
-    var numOfChannels = generators.length
-    var ctx = context(o)
-
-    var buffer = ctx.createBuffer(numOfChannels, samples, samplingRate(ctx))
-    for (var ch = 0; ch &lt; numOfChannels; ch++) {
-      generateData(generators[ch], buffer.getChannelData(ch), samples, reverse)
-    }
-    return buffer
-  }
+  if (o.tempo) freq = tempo(o.tempo, freq)
+  return mult(amp, osc(o.type || 'sine', freq))
 }
-
-function generateData (generator, data, samples, reverse) {
-  for (var i = 0; i &lt; samples; i++) {
-    data[i] = generator(reverse ? samples - i : i)
-  }
-}
-
-/**
- * White noise source node.
- * @param {Integer} length - lenth in samples
- * @param {Object} options - (Optional) the same options that `source` function
- * @return {AudioNode} the white noise audio node generator
- * @see source
- * @example
- * connect(white(seconds(1)), perc(), dest()).start()
- */
-export function white (samples, options) {
-  if (!isA('number', samples)) samples = samplingRate(options)
-  return source(gen(whiteGen, samples, options), options)
-}
-function whiteGen () { return Math.random() * 2 - 1 }
 </code></pre>
         </article>
     </section>

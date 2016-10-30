@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>buffers.js - Postman Documentation</title>
+    <title>signals.js - Postman Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -28,7 +28,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">buffers.js</h1>
+    <h1 class="page-title">signals.js</h1>
     
 
     
@@ -38,121 +38,117 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>/**
- * In synth-kit buffers can be generated (with the `gen` function) or
- * retrieved from an audio file (with the `sample`) function
- *
- * @module buffers
- */
-import { context, samplingRate } from './context'
-import { isA } from './units'
-import { lifecycle, plug } from './routing'
-import { load } from './load'
-var OPTS = {}
+            <pre class="prettyprint source linenums"><code>/** @module signals */
+
+import { context } from './context'
+import { add, connect, lifecycle, plug } from './routing'
 
 /**
- * Create a buffer source (a BufferSourceNode)
- * @param {Buffer|Function} buffer - the buffer (or a function that returns a buffer)
- * @param {Object} options - (Optional) options can include:
+ * Create a gain node
+ * @param {Float|AudioNode} gain - the gain value or modulator
+ * @param {Object} options - (Optional) options may include:
  *
- * - loop: set to true to loop the buffer
- * - detune: the detune amount (can be a number or a signal)
- * - context: the audio context to use
+ * - context: the audio context to use to create the signal
  *
- * @return {AudioNode} a BufferSourceNode
+ * @return {AudioNode} the gain node
  * @example
- * source(sample('snare.wav')).start()
- * source(sample('amen-break.mp3'), { loop: true })
+ * connect(sine(440), gain(0.3))
+ * @example
+ * // with modulation (kind of tremolo)
+ * connect(sine(400), gain(sine(10)))
  */
-export function source (buffer, o) {
-  o = o || OPTS
-  var src = context(o).createBufferSource()
-  src.buffer = isA('function', buffer) ? buffer() : buffer
-  if (!src.buffer) console.warn('Buffer not ready.')
-  if (o.loop) src.loop = true
-  return lifecycle(src, [
-    plug('detune', o.detune, src)
+export function gain (gain, options) {
+  var amp = context(options).createGain()
+  return lifecycle(amp, [
+    plug('gain', gain, amp)
   ])
 }
 
 /**
- * Fetch a remote audio sample. You get a function that returns an AudioBuffer
- * when loaded or null otherwise. Or you can chain like a promise.
+ * Create a constant signal. Normally you will use it in combination with
+ * envelopes or modulators.
  *
- * @param {String} url - the url of the file
- * @param {Object} options - (Optional) options can include:
+ * @param {Integer} value - the value of the constant
+ * @param {Object} options - (Optional) options may include:
  *
- * - context: the audio context to use
+ * - context: the audio context to use to create the signal
  *
- * @return {Function} a function the returns the buffer
- *
+ * @return {AudioNode} the constant audio node
  * @example
- * source(sample('server.com/audio-file.mp3')).start()
- * @example
- * // use the Promise like interface
- * sample('audio-file.mp3').then(function (buffer) {
- *     source(buffer).start()
- * })
+ * sine(constant(440)).start()
  */
-export function sample (url, opts) {
-  var bf = null
-  function buffer () { return bf }
-  var promise = load(url, opts).then(function (result) { bf = result })
-  buffer.then = promise.then.bind(promise)
-  return buffer
+export function constant (value, options) {
+  // TODO: cache buffer
+  var ctx = context(options)
+  var source = ctx.createBufferSource()
+  source.loop = true
+  source.buffer = ctx.createBuffer(1, 2, ctx.sampleRate)
+  var data = source.buffer.getChannelData(0)
+  data[0] = data[1] = value
+  return source
 }
 
 /**
- * Generate a BufferNode. It returns a no-parameter function that
- * returns a buffer. This way, it's easy to memoize (cache) buffers.
+ * Create a signal source. You will use signals to change parameters of a
+ * audio node after starting. See example.
+ * @param {Integer} value - the value of the constant
+ * @param {Object} options - (Optional) options may include:
  *
- * @param {Function|Array&lt;Function>} generators - a generator or a list of
- * generators (to create a buffer with multiple channels)
- * @param {Integer} samples - the length in samples
- * @param {Object} options - (Optional) options can include:
+ * - context: the audio context to use to create the signal
  *
- * - reverse: set to true to reverse the generated buffer
- * - context: the audio context to use
- *
- * @return {Function} a function with no parameters that returns the desired buffer
+ * @return {AudioParam} the constant audio node
+ * @example
+ * var freq = signal(440)
+ * sine(freq).start()
+ * freq.value.linearRampToValueAtTime(880, after(5))
  */
-export function gen (generators, samples, o) {
-  samples = samples || 2
-  o = o || OPTS
-  return function () {
-    if (!Array.isArray(generators)) generators = [ generators ]
-    var reverse = o.reverse
-    var numOfChannels = generators.length
-    var ctx = context(o)
-
-    var buffer = ctx.createBuffer(numOfChannels, samples, samplingRate(ctx))
-    for (var ch = 0; ch &lt; numOfChannels; ch++) {
-      generateData(generators[ch], buffer.getChannelData(ch), samples, reverse)
-    }
-    return buffer
-  }
-}
-
-function generateData (generator, data, samples, reverse) {
-  for (var i = 0; i &lt; samples; i++) {
-    data[i] = generator(reverse ? samples - i : i)
-  }
+export function signal (value, opts) {
+  return connect(constant(1, opts), gain(value, opts)).start()
 }
 
 /**
- * White noise source node.
- * @param {Integer} length - lenth in samples
- * @param {Object} options - (Optional) the same options that `source` function
- * @return {AudioNode} the white noise audio node generator
- * @see source
+ * Create a node that bypasses the signal
+ * @param {AudioContext} context - (Optional) the audio context
+ * @return {AudioNode} the bypass audio node
  * @example
- * connect(white(seconds(1)), perc(), dest()).start()
+ * connect(sine(300), add(bypass(), dly(0.2)))
  */
-export function white (samples, options) {
-  if (!isA('number', samples)) samples = samplingRate(options)
-  return source(gen(whiteGen, samples, options), options)
+export function bypass (ac) {
+  return context(ac).createGain()
 }
-function whiteGen () { return Math.random() * 2 - 1 }
+
+/**
+ * Multiply a signal.
+ * @param {Integer|AudioNode} value - the value
+ * @param {AudioNode} signal - the signal to multiply by
+ * @param {Object} options - (Optional) options may include:
+ *
+ * - context: the audio context to use to create the signal
+ *
+ * @example
+ * // a vibrato effect
+ * sine(440, mult(500, sine(tempo(160))))
+ */
+export function mult (value, signal, opts) {
+  return connect(signal, gain(value, opts))
+}
+
+/**
+ * Scale a signal. Given a signal (between -1 and 1) scale it to fit in a range.
+ * @param {Integer} min - the minimum of the range
+ * @param {Integer} max - the minimum of the range
+ * @param {AudioNode} source - the signal to scale
+ * @return {AudioNode} the scaled signal node
+ * @example
+ * // create a frequency envelope between 440 and 880 Hz
+ * sine(scale(440, 880, adsr(0.1, 0.01, 1, 1)))
+ */
+export function scale (min, max, source) {
+  var ctx = source
+  if (source.numberOfInputs) source = connect(constant(1, ctx), source)
+  var delta = max - min
+  return add(constant(min, ctx), mult(delta, source))
+}
 </code></pre>
         </article>
     </section>
