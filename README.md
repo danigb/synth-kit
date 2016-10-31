@@ -14,13 +14,15 @@ sine(440).connect(dest()).start()
 // start a chain of oscillator -> filter -> envelope -> destination
 conn(saw(1200), lowpass(500), adsr(), dest()).start()
 
-// create a instrument with an oscillator and envelope
+// create a instrument with an oscillator and envelope:
 var synth = inst(function (freq) {
-  return connect(saw(freq), perc())
+  return connect(saw(freq), adsr())
 })
 synth.start('C4')
+synth.start('G5')
+synth.stop()
 
-// create a substractive synth instrument with one oscillator
+// create a substractive synth instrument with one oscillator:
 var mono = inst(substract())
 mono.start('C4')
 // a substractive synth instrument with two oscillators
@@ -56,7 +58,7 @@ Notice you will need to st
 
 #### Filters and envelopes
 
-BiquadFilterNodes are created using `filter(type, freq, Q, detune)` function (or any of its aliases: `lowpass`, `hipass` and `bandpass`):
+Filters are created using `filter(type, freq, Q, detune)` function (or any of its aliases: `lowpass`, `hipass` and `bandpass`):
 
 ```js
 saw(440).connect(lowpass(200)).start()
@@ -78,9 +80,9 @@ o = saw(440).connect(perc()).start()
 
 #### Routing
 
-Routing audio nodes unsing `connect` function is cumbersome, error prone and makes hard to understand the signal flow.
+Routing audio unsing node's `connect` function is cumbersome, error prone and makes hard to understand the signal flow.
 
-Normally you will want to route nodes in series using the `conn(...nodes)` function from SynthKit:
+You can route nodes in series using the `conn(...nodes)` function:
 
 ```js
 conn(sine(440), gain(0.5))
@@ -95,12 +97,14 @@ add(sine(440), sine(880))
 These two functions can be combined creating complex audio node graphs:
 
 ```js
+// Add two sines and connect themm to a filter and an envelope
 conn(add(sine(440), sine(444)), lowpass(500), adsr())
 
+// Add two simple subtractive chain (osc -> filter -> adsr)
 add(
   conn(saw(400), lowpass(800), perc()),
   conn(square(800), hipass(1000), adsr())
-)
+).connect(dest()).start()
 ```
 
 #### Modulation
