@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>units.js - Postman Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-buffers.html">buffers</a><ul class='methods'><li data-type='method'><a href="module-buffers.html#.gen">gen</a></li><li data-type='method'><a href="module-buffers.html#.sample">sample</a></li><li data-type='method'><a href="module-buffers.html#.source">source</a></li><li data-type='method'><a href="module-buffers.html#.white">white</a></li></ul></li><li><a href="module-context.html">context</a><ul class='methods'><li data-type='method'><a href="module-context.html#.after">after</a></li><li data-type='method'><a href="module-context.html#.context">context</a></li><li data-type='method'><a href="module-context.html#.dest">dest</a></li><li data-type='method'><a href="module-context.html#.now">now</a></li><li data-type='method'><a href="module-context.html#.samplingRate">samplingRate</a></li><li data-type='method'><a href="module-context.html#.timeToSamples">timeToSamples</a></li><li data-type='method'><a href="module-context.html#.when">when</a></li></ul></li><li><a href="module-effects.html">effects</a><ul class='methods'><li data-type='method'><a href="module-effects.html#.delay">delay</a></li><li data-type='method'><a href="module-effects.html#.dly">dly</a></li><li data-type='method'><a href="module-effects.html#.feedback">feedback</a></li><li data-type='method'><a href="module-effects.html#.mix">mix</a></li><li data-type='method'><a href="module-effects.html#.tremolo">tremolo</a></li></ul></li><li><a href="module-envelopes.html">envelopes</a><ul class='methods'><li data-type='method'><a href="module-envelopes.html#.adsr">adsr</a></li><li data-type='method'><a href="module-envelopes.html#.freqEnv">freqEnv</a></li><li data-type='method'><a href="module-envelopes.html#.perc">perc</a></li></ul></li><li><a href="module-filters.html">filters</a><ul class='methods'><li data-type='method'><a href="module-filters.html#.bandpass">bandpass</a></li><li data-type='method'><a href="module-filters.html#.filter">filter</a></li><li data-type='method'><a href="module-filters.html#.hipass">hipass</a></li><li data-type='method'><a href="module-filters.html#.lowpass">lowpass</a></li></ul></li><li><a href="module-instruments.html">instruments</a><ul class='methods'><li data-type='method'><a href="module-instruments.html#.inst">inst</a></li></ul></li><li><a href="module-load.html">load</a><ul class='methods'><li data-type='method'><a href="module-load.html#.decodeAudio">decodeAudio</a></li><li data-type='method'><a href="module-load.html#.fetch">fetch</a></li><li data-type='method'><a href="module-load.html#.load">load</a></li></ul></li><li><a href="module-oscillators.html">oscillators</a><ul class='methods'><li data-type='method'><a href="module-oscillators.html#.lfo">lfo</a></li><li data-type='method'><a href="module-oscillators.html#.osc">osc</a></li><li data-type='method'><a href="module-oscillators.html#.saw">saw</a></li><li data-type='method'><a href="module-oscillators.html#.sine">sine</a></li><li data-type='method'><a href="module-oscillators.html#.square">square</a></li><li data-type='method'><a href="module-oscillators.html#.triangle">triangle</a></li></ul></li><li><a href="module-routing.html">routing</a><ul class='methods'><li data-type='method'><a href="module-routing.html#.add">add</a></li><li data-type='method'><a href="module-routing.html#.conn">conn</a></li></ul></li><li><a href="module-signals.html">signals</a><ul class='methods'><li data-type='method'><a href="module-signals.html#.bypass">bypass</a></li><li data-type='method'><a href="module-signals.html#.constant">constant</a></li><li data-type='method'><a href="module-signals.html#.gain">gain</a></li><li data-type='method'><a href="module-signals.html#.mult">mult</a></li><li data-type='method'><a href="module-signals.html#.scale">scale</a></li><li data-type='method'><a href="module-signals.html#.signal">signal</a></li></ul></li><li><a href="module-synths.html">synths</a><ul class='methods'><li data-type='method'><a href="module-synths.html#.additive">additive</a></li><li data-type='method'><a href="module-synths.html#.subtractive">subtractive</a></li><li data-type='method'><a href="module-synths.html#.withOptions">withOptions</a></li></ul></li></ul><h3>Global</h3><ul><li><a href="global.html#dB">dB</a></li><li><a href="global.html#gainToDb">gainToDb</a></li><li><a href="global.html#note">note</a></li><li><a href="global.html#tempo">tempo</a></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">units.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import Note from 'note-parser'
+var pow = Math.pow
+
+/**
+ * Convert from beats per minute to hertzs
+ * @param {Integer} bpm - the tempo
+ * @param {Integer} sub - (Optional) subdivision (default 1)
+ * @return {Float} the tempo expressed in hertzs
+ */
+export function tempo (bpm, sub) { return (bpm / 60) * (sub || 1) }
+
+/**
+ * Get frequency of a note. The note can be a note name in scientific
+ * notation (for example: 'C#2') or a midi number
+ */
+export function note (name, base) {
+  return Note.freq(name)
+}
+
+export function hz (value, base) {
+  if (typeof value === 'string') {
+    base = base || 440
+    return pow(2, (+value - 69) / 12) * base
+  } else {
+    return Math.abs(+value)
+  }
+}
+
+/**
+ *  Convert decibels into gain.
+ *  @param  {Number} db
+ *  @return {Number} the gain (from 0 to 1)
+ */
+export function dB (db) { return pow(2, db / 6) }
+
+/**
+ *  Convert gain to decibels.
+ *  @param  {Number} gain (0-1)
+ *  @return {Decibels}
+ */
+export function gainToDb (gain) { return 20 * (Math.log(gain) / Math.LN10) }
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated at Mon Oct 31 2016 13:30:35 GMT+0100 (CET)
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>

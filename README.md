@@ -4,60 +4,57 @@
 
 > A (web audio) synth construction kit
 
-`synth-kit` is a little collection of functions to make Web Audio API more enjoyable. Some examples:
+`synth-kit` is a collection of functions to make Web Audio API more enjoyable. Here is some taste of what you get:
 
 ```js
-import { connect, add, sine, saw, lowpass, gain, adsr } from 'synth-kit'
+import { connect, add, sine, saw, lowpass, gain, adsr, dest, master } from 'synth-kit'
 
-sine(440).start()
-connect(saw(1200), lowpass(500), adsr()).start()
-add(sine(800), connect(sine(1600), gain(0.5))).start()
+// start an OscillatorNode and connect it to AudioContext's destination
+sine(440).connect(dest()).start()
+// start a chain of oscillator -> filter -> envelope -> destination
+conn(saw(1200), lowpass(500), adsr(), dest()).start()
 
+// create a instrument with an oscillator and envelope
+var synth = inst(function (freq) {
+  return connect(saw(freq), perc())
+})
+synth.start('C4')
+
+// create a substractive synth instrument with one oscillator
+var mono = inst(substract())
+mono.start('C4')
+// a substractive synth instrument with two oscillators
+var duo = inst(add(substract(sine), substract(sine, { detune: -10 })))
+duo.start({ note: 'C4', attack: 0.5 })
 ```
 
 ## Usage
 
-#### Oscillators
+#### Oscillators, buffers and sources
 
 The `osc(type, freq, detune)` function creates an OscillatorNode:
 
 ```js
-osc('sawtooth', 880).start()
+osc('sawtooth', 880).connect(dest()).start()
 ```
 
 You can use any of its aliases: `sine`, `saw`, `triangle` or `square`:
 
 ```js
-sine(440).start()
+sine(440).connect(dest()).start()
 ```
 
-#### Buffers and BufferSources
-
-You can load a buffer with `load(url)` and play it with `sample(buffer, loop, detune)`:
+You can load a sample with `sample(url, options)` function and play it with the `source(buffer, options)` function:
 
 ```js
-var buffer = load('http://myserver.com/samples/kick.mp3')
-sample(buffer).start()
+var kick = sample('http://myserver.com/samples/kick.mp3')
+source(kick).start()
 ```
 
-Notice that `load` will return a _function that creates a buffer_ (although you can pass it directly to the `sample` function as a buffer parameter). This is because the function returned from load will in turn return an empty buffer until the sound is loaded.
+Notice you will need to st
 
-You can use the `loadAll(baseUrl, names, ext)` to load more than a buffer:
 
-```js
-var buffers = loadAll('https://danigb.github.io/sampled/MRK-2/samples', ['snare', 'kick', 'block'], '.wav')
-sample(buffers['kick']).start()
-```
-
-As you can see by the examples, this is fully compatible with [sampled](https://github.com/danigb/sampled) repository.
-
-#### Gain and Filters
-
-You can use the `gain(amount)` function to create a GainNode:
-
-```js
-sine(300).connect(gain(0.2)).start()
-```
+#### Filters and envelopes
 
 BiquadFilterNodes are created using `filter(type, freq, Q, detune)` function (or any of its aliases: `lowpass`, `hipass` and `bandpass`):
 
@@ -65,14 +62,28 @@ BiquadFilterNodes are created using `filter(type, freq, Q, detune)` function (or
 saw(440).connect(lowpass(200)).start()
 ```
 
+There are several types of envelopes. The typical `adsr(options)`:
+
+```js
+o = saw(440).connect(adsr({ release: 1 }))
+o.start()
+o.stop() // => will have 1 second of exponential decay
+```
+
+Or a percutive attack-decay envelope with `perc(attack, decay)`:
+
+```js
+o = saw(440).connect(perc()).start()
+```
+
 #### Routing
 
 Routing audio nodes unsing `connect` function is cumbersome, error prone and makes hard to understand the signal flow.
 
-Normally you will want to route nodes in series using the `connect(...nodes)` function:
+Normally you will want to route nodes in series using the `conn(...nodes)` function from SynthKit:
 
 ```js
-connect(sine(440), gain(0.5))
+conn(sine(440), gain(0.5))
 ```
 
 Or route them in parrallel using the `add(...nodes)` function:
@@ -81,14 +92,15 @@ Or route them in parrallel using the `add(...nodes)` function:
 add(sine(440), sine(880))
 ```
 
-These two functions can be combined in any complex way:
+These two functions can be combined creating complex audio node graphs:
 
 ```js
-connect(
-  add(
-    saw(440),
-    connect(saw(442), gain(0.4))
-  ), lowpass(350), adsr())
+conn(add(sine(440), sine(444)), lowpass(500), adsr())
+
+add(
+  conn(saw(400), lowpass(800), perc()),
+  conn(square(800), hipass(1000), adsr())
+)
 ```
 
 #### Modulation
@@ -110,41 +122,36 @@ connect(saw(440), gain(sine(15))).start()
 connect(saw(440), tremolo(15)).start()
 ```
 
-#### Reusing
+#### Synths
 
-Since OscillatorNodes and BufferSourceNodes are _single-shot_ usage, you can't call `start` twice on the same object:
-
-```js
-var synth = connect(saw(300), adsr())
-o.start()
-o.start() // error
-```
-
-The way to solve this limitation is by wrapping the synth definition in a function:
+You can create a typical subtract synthetizer with an oscillator, a filter and two envelopes with the `subtract(freq, options)` function:
 
 ```js
-// a one oscillator synth
-function mono (freq) {
-  return connect(saw(freq), adsr())
-}
-mono(440).start()
-mono(880).start()
+subtractive(880, { type: 'square', filter: { type: 'hipass' } }).connect(dest()).start()
 ```
 
-Again, those can be composed in larger structures:
+Or a prototypical additive synthetizer:
 
 ```js
-// a two oscillator synth
-function duo (freq) {
-  return add(mono(freq), mono(freq * 2.05))
-}
-duo(440).start()
-duo(note('C4')).start()
+additive([440, 880, 1200], { gains: [0.6, 0.3, 0.1] }).connect(dest()).start()
 ```
 
-#### Envelopes
+#### Instruments
 
-#### Effects
+Sometime you want a more OOP interface. You want a instrument:
+
+```js
+var marimba = inst(function (freq) {
+  return add(
+    conn(sine(fq), perc(0.1, 1)),
+    conn(sine(2 * fq), perc(0.01, 0.1))
+  )
+})
+marimba.start('C4')
+marimba.start('G5')
+marimba.stop()
+```
+
 
 #### Conversion and utility functions
 

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>effects.js - Postman Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-buffers.html">buffers</a><ul class='methods'><li data-type='method'><a href="module-buffers.html#.gen">gen</a></li><li data-type='method'><a href="module-buffers.html#.sample">sample</a></li><li data-type='method'><a href="module-buffers.html#.source">source</a></li><li data-type='method'><a href="module-buffers.html#.white">white</a></li></ul></li><li><a href="module-context.html">context</a><ul class='methods'><li data-type='method'><a href="module-context.html#.after">after</a></li><li data-type='method'><a href="module-context.html#.context">context</a></li><li data-type='method'><a href="module-context.html#.dest">dest</a></li><li data-type='method'><a href="module-context.html#.now">now</a></li><li data-type='method'><a href="module-context.html#.samplingRate">samplingRate</a></li><li data-type='method'><a href="module-context.html#.timeToSamples">timeToSamples</a></li><li data-type='method'><a href="module-context.html#.when">when</a></li></ul></li><li><a href="module-effects.html">effects</a><ul class='methods'><li data-type='method'><a href="module-effects.html#.delay">delay</a></li><li data-type='method'><a href="module-effects.html#.dly">dly</a></li><li data-type='method'><a href="module-effects.html#.feedback">feedback</a></li><li data-type='method'><a href="module-effects.html#.mix">mix</a></li><li data-type='method'><a href="module-effects.html#.tremolo">tremolo</a></li></ul></li><li><a href="module-envelopes.html">envelopes</a><ul class='methods'><li data-type='method'><a href="module-envelopes.html#.adsr">adsr</a></li><li data-type='method'><a href="module-envelopes.html#.freqEnv">freqEnv</a></li><li data-type='method'><a href="module-envelopes.html#.perc">perc</a></li></ul></li><li><a href="module-filters.html">filters</a><ul class='methods'><li data-type='method'><a href="module-filters.html#.bandpass">bandpass</a></li><li data-type='method'><a href="module-filters.html#.filter">filter</a></li><li data-type='method'><a href="module-filters.html#.hipass">hipass</a></li><li data-type='method'><a href="module-filters.html#.lowpass">lowpass</a></li></ul></li><li><a href="module-instruments.html">instruments</a><ul class='methods'><li data-type='method'><a href="module-instruments.html#.inst">inst</a></li></ul></li><li><a href="module-load.html">load</a><ul class='methods'><li data-type='method'><a href="module-load.html#.decodeAudio">decodeAudio</a></li><li data-type='method'><a href="module-load.html#.fetch">fetch</a></li><li data-type='method'><a href="module-load.html#.load">load</a></li></ul></li><li><a href="module-oscillators.html">oscillators</a><ul class='methods'><li data-type='method'><a href="module-oscillators.html#.lfo">lfo</a></li><li data-type='method'><a href="module-oscillators.html#.osc">osc</a></li><li data-type='method'><a href="module-oscillators.html#.saw">saw</a></li><li data-type='method'><a href="module-oscillators.html#.sine">sine</a></li><li data-type='method'><a href="module-oscillators.html#.square">square</a></li><li data-type='method'><a href="module-oscillators.html#.triangle">triangle</a></li></ul></li><li><a href="module-routing.html">routing</a><ul class='methods'><li data-type='method'><a href="module-routing.html#.add">add</a></li><li data-type='method'><a href="module-routing.html#.conn">conn</a></li></ul></li><li><a href="module-signals.html">signals</a><ul class='methods'><li data-type='method'><a href="module-signals.html#.bypass">bypass</a></li><li data-type='method'><a href="module-signals.html#.constant">constant</a></li><li data-type='method'><a href="module-signals.html#.gain">gain</a></li><li data-type='method'><a href="module-signals.html#.mult">mult</a></li><li data-type='method'><a href="module-signals.html#.scale">scale</a></li><li data-type='method'><a href="module-signals.html#.signal">signal</a></li></ul></li><li><a href="module-synths.html">synths</a><ul class='methods'><li data-type='method'><a href="module-synths.html#.additive">additive</a></li><li data-type='method'><a href="module-synths.html#.subtractive">subtractive</a></li><li data-type='method'><a href="module-synths.html#.withOptions">withOptions</a></li></ul></li></ul><h3>Global</h3><ul><li><a href="global.html#dB">dB</a></li><li><a href="global.html#gainToDb">gainToDb</a></li><li><a href="global.html#note">note</a></li><li><a href="global.html#tempo">tempo</a></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">effects.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/** @module effects */
+import { context } from './context'
+import { add, conn, plug, lifecycle } from './routing'
+import { bypass, gain } from './signals'
+import { isA } from './utils'
+import { osc } from './oscillators'
+import { lowpass } from './filters'
+
+/**
+ * Mix an effect with the signal. Can be partially applied to create an
+ * effect bus.
+ * @param {Number} wet - the amount of effect (0-1)
+ * @param {AudioNode} fx - the effect unit
+ * @return {AudioNode}
+ * @example
+ * mix(dB(-3), delay(ms(800)))
+ * @example
+ * // create an effect bus
+ * var fxs = mix(conn(reverb(0.1), delay([ms(20), ms(21)])))
+ * conn(sine(300), fxs(0.2))
+ */
+export function mix (fx, wet, norm) {
+  if (arguments.length === 1) return function (w, n) { return mix(fx, w, n) }
+  if (!isA('number', wet)) wet = 0.5
+  var dry = norm === false ? 1 : 1 - wet
+  return add(gain(dry), conn(fx, gain(wet)))
+}
+
+/**
+ * Create a feedback loop.
+ * @param {Integer} amount - the amount of signal
+ * @param {AudioNode} node - the node to feedback
+ * @param {Object} options - (Optional) options may include:
+ *
+ * - context: the audio context to use
+ *
+ * @return {AudioNode} the original node (with a feedback loop)
+ */
+export function feedback (amount, node, options) {
+  var feed = gain(amount, options)
+  node.conn(feed)
+  feed.conn(node)
+  return node
+}
+
+/**
+ * Create a tremolo
+ */
+export function tremolo (rate, type, ac) {
+  type = type || 'sine'
+  return gain(osc(type, rate, ac), ac)
+}
+
+/**
+ * Create a delay (a DelayNode object)
+ */
+export function dly (time, ac) {
+  var dly = context(ac).createDelay(5)
+  return lifecycle(dly, [
+    plug('delayTime', time, dly)
+  ])
+}
+
+/**
+ * A mono or stereo delay with filtered feedback
+ */
+export function delay (time, filter, feedAmount, ac) {
+  if (!isA('number', feedAmount)) feedAmount = 0.3
+  filter = isA('number', filter) ? lowpass(filter, null, null, ac) : filter || bypass(ac)
+  return feedback(feedAmount, dly(time, ac), filter, ac)
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated at Mon Oct 31 2016 13:30:35 GMT+0100 (CET)
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>

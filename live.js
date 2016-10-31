@@ -37,8 +37,8 @@ SynthKit.live = function () {
     })
     return i
   }
-  console.log('SynthKit live', 10, names.length)
-  console.log(names.join(', '))
+  console.log('SynthKit live', 200, names.length)
+  console.log(names.sort().join(', '))
 }
 
 module.exports = SynthKit

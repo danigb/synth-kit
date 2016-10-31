@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>context - Postman Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-buffers.html">buffers</a><ul class='methods'><li data-type='method'><a href="module-buffers.html#.gen">gen</a></li><li data-type='method'><a href="module-buffers.html#.sample">sample</a></li><li data-type='method'><a href="module-buffers.html#.source">source</a></li><li data-type='method'><a href="module-buffers.html#.white">white</a></li></ul></li><li><a href="module-context.html">context</a><ul class='methods'><li data-type='method'><a href="module-context.html#.after">after</a></li><li data-type='method'><a href="module-context.html#.context">context</a></li><li data-type='method'><a href="module-context.html#.dest">dest</a></li><li data-type='method'><a href="module-context.html#.now">now</a></li><li data-type='method'><a href="module-context.html#.samplingRate">samplingRate</a></li><li data-type='method'><a href="module-context.html#.timeToSamples">timeToSamples</a></li><li data-type='method'><a href="module-context.html#.when">when</a></li></ul></li><li><a href="module-effects.html">effects</a><ul class='methods'><li data-type='method'><a href="module-effects.html#.delay">delay</a></li><li data-type='method'><a href="module-effects.html#.dly">dly</a></li><li data-type='method'><a href="module-effects.html#.feedback">feedback</a></li><li data-type='method'><a href="module-effects.html#.mix">mix</a></li><li data-type='method'><a href="module-effects.html#.tremolo">tremolo</a></li></ul></li><li><a href="module-envelopes.html">envelopes</a><ul class='methods'><li data-type='method'><a href="module-envelopes.html#.adsr">adsr</a></li><li data-type='method'><a href="module-envelopes.html#.freqEnv">freqEnv</a></li><li data-type='method'><a href="module-envelopes.html#.perc">perc</a></li></ul></li><li><a href="module-filters.html">filters</a><ul class='methods'><li data-type='method'><a href="module-filters.html#.bandpass">bandpass</a></li><li data-type='method'><a href="module-filters.html#.filter">filter</a></li><li data-type='method'><a href="module-filters.html#.hipass">hipass</a></li><li data-type='method'><a href="module-filters.html#.lowpass">lowpass</a></li></ul></li><li><a href="module-instruments.html">instruments</a><ul class='methods'><li data-type='method'><a href="module-instruments.html#.inst">inst</a></li></ul></li><li><a href="module-load.html">load</a><ul class='methods'><li data-type='method'><a href="module-load.html#.decodeAudio">decodeAudio</a></li><li data-type='method'><a href="module-load.html#.fetch">fetch</a></li><li data-type='method'><a href="module-load.html#.load">load</a></li></ul></li><li><a href="module-oscillators.html">oscillators</a><ul class='methods'><li data-type='method'><a href="module-oscillators.html#.lfo">lfo</a></li><li data-type='method'><a href="module-oscillators.html#.osc">osc</a></li><li data-type='method'><a href="module-oscillators.html#.saw">saw</a></li><li data-type='method'><a href="module-oscillators.html#.sine">sine</a></li><li data-type='method'><a href="module-oscillators.html#.square">square</a></li><li data-type='method'><a href="module-oscillators.html#.triangle">triangle</a></li></ul></li><li><a href="module-routing.html">routing</a><ul class='methods'><li data-type='method'><a href="module-routing.html#.add">add</a></li><li data-type='method'><a href="module-routing.html#.conn">conn</a></li></ul></li><li><a href="module-signals.html">signals</a><ul class='methods'><li data-type='method'><a href="module-signals.html#.bypass">bypass</a></li><li data-type='method'><a href="module-signals.html#.constant">constant</a></li><li data-type='method'><a href="module-signals.html#.gain">gain</a></li><li data-type='method'><a href="module-signals.html#.mult">mult</a></li><li data-type='method'><a href="module-signals.html#.scale">scale</a></li><li data-type='method'><a href="module-signals.html#.signal">signal</a></li></ul></li><li><a href="module-synths.html">synths</a><ul class='methods'><li data-type='method'><a href="module-synths.html#.additive">additive</a></li><li data-type='method'><a href="module-synths.html#.subtractive">subtractive</a></li><li data-type='method'><a href="module-synths.html#.withOptions">withOptions</a></li></ul></li></ul><h3>Global</h3><ul><li><a href="global.html#dB">dB</a></li><li><a href="global.html#gainToDb">gainToDb</a></li><li><a href="global.html#note">note</a></li><li><a href="global.html#tempo">tempo</a></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">context</h1>
+    
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        
+            
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+            <div class="description"><p>In synth-kit most of the functions accepts an optional AudioContext as
+last parameter. If no one is provided, synth-kit creates a singleton
+AudioContext using <a href="npmjs.com/package/audio-context">'audio-context'</a> module.</p></div>
+        
+
+        
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="context.js.html">context.js</a>, <a href="context.js.html#line1">line 1</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    
+    </div>
+
+    
+
+    
+
+    
+
+     
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id=".after"><span class="type-signature">(static) </span>after<span class="signature">(delay, context)</span><span class="type-signature"> &rarr; {Float}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Get time after n seconds (from now)</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>delay</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Float</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the delay</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>context</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">AudioContext</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(Optional) an optional audio context</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="context.js.html">context.js</a>, <a href="context.js.html#line73">line 73</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>time in seconds</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Float</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>now() // => 0.785
+after(1) // => 1.785</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".context"><span class="type-signature">(static) </span>context<span class="signature">(context)</span><span class="type-signature"> &rarr; {AudioContext}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Get the audio context.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>context</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">AudioContext</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(Optional) if given, it return itself. If
+nothing passed, it returns the AudioContext singleton instance</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="context.js.html">context.js</a>, <a href="context.js.html#line28">line 28</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>the audio context</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">AudioContext</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>// normally you won't do this:
+var gain = context().createGain()</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".dest"><span class="type-signature">(static) </span>dest<span class="signature">(context)</span><span class="type-signature"> &rarr; {AudioContext}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Get the audio context's destination</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>context</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">AudioContext</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(Optional) an alternate audio context</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="context.js.html">context.js</a>, <a href="context.js.html#line37">line 37</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>the audio context destination</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">AudioContext</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>conn(sine(300), dest()).start()</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".now"><span class="type-signature">(static) </span>now<span class="signature">(context)</span><span class="type-signature"> &rarr; {Number}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Get audio context's current time</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>context</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">AudioContext</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(Optional) an optional audio context</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="context.js.html">context.js</a>, <a href="context.js.html#line46">line 46</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>the time in seconds relative to the AudioContext creation</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Number</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>now() // => 3.3213</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".samplingRate"><span class="type-signature">(static) </span>samplingRate<span class="signature">(context)</span><span class="type-signature"> &rarr; {Integer}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Get audio context sampling rate</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>context</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">AudioContext</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(Optional) the audio context</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="context.js.html">context.js</a>, <a href="context.js.html#line82">line 82</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>the context's sampling rate</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Integer</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>samplingRate() // => 44100</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".timeToSamples"><span class="type-signature">(static) </span>timeToSamples<span class="signature">(seconds, context)</span><span class="type-signature"> &rarr; {Integer}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Convert from seconds to samples (using AudioContext sampling rate)</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>seconds</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Float</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the number of seconds</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>context</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">AudioContext</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(Optional) the audio context</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="context.js.html">context.js</a>, <a href="context.js.html#line92">line 92</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>the number of samples</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Integer</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>white(seconds(1.2)) // => generate 1.2 seconds of white noise</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".when"><span class="type-signature">(static) </span>when<span class="signature">(time, delay, context)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Get a valid time</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>time</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Float</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the time (equal or greater than now(), otherwise, ignored)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>delay</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Float</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the delay</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>context</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">AudioContext</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(Optional) an optional audio context</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="context.js.html">context.js</a>, <a href="context.js.html#line59">line 59</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>now() // => 0.7
+time(0.2) // => 0.7
+time(1) // => 1
+time(0.2, 1) // => 1.7 (time is ignored because is &lt; than now())</code></pre>
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated at Mon Oct 31 2016 13:30:35 GMT+0100 (CET)
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>

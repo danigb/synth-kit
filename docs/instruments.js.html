@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>instruments.js - Postman Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-buffers.html">buffers</a><ul class='methods'><li data-type='method'><a href="module-buffers.html#.gen">gen</a></li><li data-type='method'><a href="module-buffers.html#.sample">sample</a></li><li data-type='method'><a href="module-buffers.html#.source">source</a></li><li data-type='method'><a href="module-buffers.html#.white">white</a></li></ul></li><li><a href="module-context.html">context</a><ul class='methods'><li data-type='method'><a href="module-context.html#.after">after</a></li><li data-type='method'><a href="module-context.html#.context">context</a></li><li data-type='method'><a href="module-context.html#.dest">dest</a></li><li data-type='method'><a href="module-context.html#.now">now</a></li><li data-type='method'><a href="module-context.html#.samplingRate">samplingRate</a></li><li data-type='method'><a href="module-context.html#.timeToSamples">timeToSamples</a></li><li data-type='method'><a href="module-context.html#.when">when</a></li></ul></li><li><a href="module-effects.html">effects</a><ul class='methods'><li data-type='method'><a href="module-effects.html#.delay">delay</a></li><li data-type='method'><a href="module-effects.html#.dly">dly</a></li><li data-type='method'><a href="module-effects.html#.feedback">feedback</a></li><li data-type='method'><a href="module-effects.html#.mix">mix</a></li><li data-type='method'><a href="module-effects.html#.tremolo">tremolo</a></li></ul></li><li><a href="module-envelopes.html">envelopes</a><ul class='methods'><li data-type='method'><a href="module-envelopes.html#.adsr">adsr</a></li><li data-type='method'><a href="module-envelopes.html#.freqEnv">freqEnv</a></li><li data-type='method'><a href="module-envelopes.html#.perc">perc</a></li></ul></li><li><a href="module-filters.html">filters</a><ul class='methods'><li data-type='method'><a href="module-filters.html#.bandpass">bandpass</a></li><li data-type='method'><a href="module-filters.html#.filter">filter</a></li><li data-type='method'><a href="module-filters.html#.hipass">hipass</a></li><li data-type='method'><a href="module-filters.html#.lowpass">lowpass</a></li></ul></li><li><a href="module-instruments.html">instruments</a><ul class='methods'><li data-type='method'><a href="module-instruments.html#.inst">inst</a></li></ul></li><li><a href="module-load.html">load</a><ul class='methods'><li data-type='method'><a href="module-load.html#.decodeAudio">decodeAudio</a></li><li data-type='method'><a href="module-load.html#.fetch">fetch</a></li><li data-type='method'><a href="module-load.html#.load">load</a></li></ul></li><li><a href="module-oscillators.html">oscillators</a><ul class='methods'><li data-type='method'><a href="module-oscillators.html#.lfo">lfo</a></li><li data-type='method'><a href="module-oscillators.html#.osc">osc</a></li><li data-type='method'><a href="module-oscillators.html#.saw">saw</a></li><li data-type='method'><a href="module-oscillators.html#.sine">sine</a></li><li data-type='method'><a href="module-oscillators.html#.square">square</a></li><li data-type='method'><a href="module-oscillators.html#.triangle">triangle</a></li></ul></li><li><a href="module-routing.html">routing</a><ul class='methods'><li data-type='method'><a href="module-routing.html#.add">add</a></li><li data-type='method'><a href="module-routing.html#.conn">conn</a></li></ul></li><li><a href="module-signals.html">signals</a><ul class='methods'><li data-type='method'><a href="module-signals.html#.bypass">bypass</a></li><li data-type='method'><a href="module-signals.html#.constant">constant</a></li><li data-type='method'><a href="module-signals.html#.gain">gain</a></li><li data-type='method'><a href="module-signals.html#.mult">mult</a></li><li data-type='method'><a href="module-signals.html#.scale">scale</a></li><li data-type='method'><a href="module-signals.html#.signal">signal</a></li></ul></li><li><a href="module-synths.html">synths</a><ul class='methods'><li data-type='method'><a href="module-synths.html#.additive">additive</a></li><li data-type='method'><a href="module-synths.html#.subtractive">subtractive</a></li><li data-type='method'><a href="module-synths.html#.withOptions">withOptions</a></li></ul></li></ul><h3>Global</h3><ul><li><a href="global.html#dB">dB</a></li><li><a href="global.html#gainToDb">gainToDb</a></li><li><a href="global.html#note">note</a></li><li><a href="global.html#tempo">tempo</a></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">instruments.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Instruments provide a OOP style interface to the synths. Something with
+ * `start` and `stop` methods, than can be called several times and know about
+ * note frequencies and midi connections.
+ *
+ * @example
+ * var simple = inst((fq) => conn(sine(fq), adsr()))
+ * simple.start('C4')
+ * simple.start('G5')
+ * simple.stop() // => stop all notes
+ * @module instruments
+ */
+import { isA, OPTS, toArr, slice } from './utils'
+import { context, when, dest } from './context'
+import { withDest } from './synths'
+
+/**
+ * A master output instrument. You can use it to start and stop nodes. All
+ * started nodes will be connected to the AudioContext destination.
+ *
+ * @example
+ * master.start(sine(300)) // connect to destination and start
+ * master.start(sine(600), 0, 1) // connect to destination and start after 1 second
+ * master.stop() // stop all
+ */
+export var master = inst(null, dest())
+
+/**
+ * Create an object-oriented-style instrument player. It wraps a synth function
+ * (a function that create nodes) into in a convenient player API. It can
+ * be used to limit the polyphony.
+ *
+ * The player object have the following methods:
+ *
+ * - `start(node, when, delay, duration)`: start a node
+ * - `stop`: stop all nodes
+ * - `on(name, callback)`: add an event callback
+ * - `event(name, ...values)`: fire an event
+ *
+ *
+ * @param {Function} synth - the synth function (a function that returns a node graph)
+ * @param {AudioNode} destination - if present, all nodes will be connected to
+ * this destination
+ * @param {Object} options - (Optional) the options may include:
+ *
+ * - maxVoices: the maximum number of simultaneous voices. No value (by default)
+ * means no limit.
+ *
+ * @return {Player} a player object
+ *
+ * @example
+ * // an instrument with destination
+ * var synth = inst((fq) => sine(fq), dest())
+ * synth.start('A4')
+ * synth.stopAll()
+ * @example
+ * // only the destination
+ * var master = inst(null, conn(mix(0.2), reverb(), dest()))
+ * master.start(sine(300))
+ * master.start(sine(400))
+ * master.stopAll()
+ */
+export function inst (synth, destination, options) {
+  synth = withDest(synth, destination || dest())
+  return tracker(synth, options || OPTS)
+}
+
+/**
+ * tracker: (fn: (object) => Node, options: object) => interface { start: fn, stop: fn }
+ * @private
+ */
+function tracker (synth, opts) {
+  var ob = observable({})
+  var limit = opts ? opts.maxVoices : 0
+  var voices = { limit: limit, all: {}, nextId: 0, current: 0, pool: new Array(limit) }
+
+  function track (node) {
+    node.id = voices.nextId++
+    voices.all[node.id] = node
+    on(node, 'ended', function () {
+      delete voices.all[node.id]
+      ob.event('voices', Object.keys(voices.all), limit)
+    })
+    return node
+  }
+
+  ob.start = function (value, time, delay, duration) {
+    var node = synth(value)
+    if (node.start) {
+      track(node)
+      time = start(node, time, delay, duration).startedAt
+      ob.event('start', node.id, time)
+      ob.event('voices', Object.keys(voices.all), limit)
+    }
+    return node
+  }
+  ob.stop = function (ids, time, delay) {
+    var t = 0
+    ids = toArr(ids || ids === 0 ? ids : Object.keys(voices.all))
+    ids.forEach(function (id) {
+      if (voices.all[id]) {
+        if (!t) t = when(time, delay, voices.all[id].context)
+        voices.all[id].stop(t)
+      }
+    })
+  }
+  return ob
+}
+
+function start (node, time, delay, duration) {
+  if (time &amp;&amp; !isA('number', time)) throw Error('Invalid time (maybe forgot connect?): ', time, delay, duration, node)
+  time = when(time, delay, context(node.context))
+  node.start(time)
+  node.startedAt = time
+  var d = duration || node.duration
+  if (d) node.stop(time + d)
+  return node
+}
+
+// EVENTS
+// ======
+// decorate an objet to have `on` and `event` methods
+function observable (obj) {
+  obj.on = on.bind(null, obj)
+  obj.event = event.bind(null, obj)
+  return obj
+}
+
+// add a listener to a target
+function on (target, name, callback) {
+  if (!name || name === '*') name = 'event'
+  var prev = target['on' + name]
+  target['on' + name] = function () {
+    if (prev) prev.apply(null, arguments)
+    callback.apply(null, arguments)
+  }
+  return target
+}
+
+// fire an event
+function event (target, name /*, ...values */) {
+  var args = slice.call(arguments, 1)
+  if (isA('function', target['on' + name])) target['on' + name].apply(null, args)
+  if (isA('function', target.onevent)) target.onevent.apply(null, args)
+  return target
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated at Mon Oct 31 2016 13:30:35 GMT+0100 (CET)
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>
