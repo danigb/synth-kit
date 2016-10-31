@@ -57,9 +57,7 @@ proto.connect = function () {
  * // normally you won't do this:
  * var gain = context().createGain()
  */
-function context (ctx) {
-  return ctx ? ctx.context || ctx : index
-}
+function context (ctx) { return ctx || index }
 
 /**
  * Get the audio context's destination
@@ -324,12 +322,6 @@ var index$1 = parser;
 var pow = Math.pow;
 
 /**
- * typeof shortcut
- * @private
- */
-function isA (t, x) { return typeof x === t }
-
-/**
  * Convert from beats per minute to hertzs
  * @param {Integer} bpm - the tempo
  * @param {Integer} sub - (Optional) subdivision (default 1)
@@ -346,7 +338,7 @@ function note (name, base) {
 }
 
 function hz (value, base) {
-  if (isA('string', value)) {
+  if (typeof value === 'string') {
     base = base || 440;
     return pow(2, (+value - 69) / 12) * base
   } else {
@@ -369,14 +361,68 @@ function dB (db) { return pow(2, db / 6) }
 function gainToDb (gain) { return 20 * (Math.log(gain) / Math.LN10) }
 
 /**
+ * Simple utilities shared between all the modules
+ * @private
+ * @module utils
+ */
+
+/**
+ * @private
+ * Empty options object (treat is as immutable)
+ */
+var OPTS = {};
+
+/**
+ * @private
+ * typeof shortcut
+ */
+function isA (t, x) { return typeof x === t }
+
+/**
+ * @private
+ * Ensure the value is an array
+ */
+function toArr (arr) { return Array.isArray(arr) ? arr : [ arr ] }
+
+/**
+ * @private
+ * The array.slice function unbinded
+ */
+var slice = Array.prototype.slice;
+
+/**
+ * @private
+ * Test if its an array
+ */
+var isArray = Array.isArray;
+
+/**
+ * @private
+ * Object.assign function
+ */
+var assign = Object.assign;
+
+/**
  * This module provides two ways to route nodes:
  *
  * - In series: A -> B -> C -> D, using the `connect` function
  * - In parallel: in -> [A, B, C] -> out, using the `add` function
  * @module routing
  */
-var slice = Array.prototype.slice;
-var isArray = Array.isArray;
+
+function pluck (name, def) {
+  return function (obj) { return obj[name] || def }
+}
+
+/*
+
+Hay dos problemas a resolver (sólo en serial!!):
+
+# 1. AL EMPEZAR: Si hay un envelope solo con attack ->
+- hay que parar (todo) al final del attack envelope
+
+# 2. AL PARAR: Si no hay envelopes sin release, pero los hay con release ->
+- hay
 
 /**
  * Connect nodes in series: A -> B -> C -> D.
@@ -389,14 +435,24 @@ function connect (nodes) {
   else if (nodes.length === 1) return nodes[0]
 
   var first = nodes[0];
+  if (!first.duration) first.duration = 0;
   var last = nodes.reduce(function (src, dest) {
     src.connect(dest);
+    first.duration = Math.max(first.duration, dest.duration || 0);
     return dest
   });
   first.connect = last.connect.bind(last);
-  return lifecycle(first, nodes.slice(1))
+  var node = lifecycle(first, nodes.slice(1));
+  if (node.linked) {
+    node.start.then = function (time, node, deps) {
+      var dur = Math.min.apply(null, deps.map(pluck('duration', 0)));
+      if (dur) node.stop(time + dur);
+    };
+  }
+  return node
 }
 
+// A RESOLVER: add debe tener onended cuando acaben todos sus nodos
 /**
  * Connect nodes in parallel in order to add signals. This is one of the
  * routing functions (the other is `connect`).
@@ -453,9 +509,11 @@ function lifecycle (node, dependents) {
   if (deps.length) {
     var _start = node.start;
     var _stop = node.stop;
+    node.linked = dependents;
     node.start = function (time) {
       var res = _start ? _start.call(node, time) : void 0;
       deps.forEach(function (d) { if (d.start) d.start(time); });
+      if (node.start.then) node.start.then(time, node, dependents);
       return res
     };
     node.stop = function (time) {
@@ -483,8 +541,8 @@ function lifecycle (node, dependents) {
  * // with modulation (kind of tremolo)
  * connect(sine(400), gain(sine(10)))
  */
-function gain (gain, options) {
-  var amp = context(options).createGain();
+function gain (gain, o) {
+  var amp = context(o ? o.context : null).createGain();
   return lifecycle(amp, [
     plug('gain', gain, amp)
   ])
@@ -503,9 +561,9 @@ function gain (gain, options) {
  * @example
  * sine(constant(440)).start()
  */
-function constant (value, options) {
+function constant (value, o) {
   // TODO: cache buffer
-  var ctx = context(options);
+  var ctx = context(o ? o.context : null);
   var source = ctx.createBufferSource();
   source.loop = true;
   source.buffer = ctx.createBuffer(1, 2, ctx.sampleRate);
@@ -539,8 +597,8 @@ function signal (value, opts) {
  * @example
  * connect(sine(300), add(bypass(), dly(0.2)))
  */
-function bypass (ac) {
-  return context(ac).createGain()
+function bypass (o) {
+  return context(o ? o.context : null).createGain()
 }
 
 /**
@@ -585,9 +643,6 @@ function scale (min, max, source) {
  * master.start(sine(Hz('A4'), { detune: lfo(5, 10) }))
  * @module oscillators
  */
-var OPTS = {};
-function toArr (val) { return Array.isArray(val) ? val : [ val ] }
-
 /**
  * Create an oscillator (an OscillatorNode)
  * @param {String} type - one of OscillatorNode [types]()
@@ -605,13 +660,13 @@ function toArr (val) { return Array.isArray(val) ? val : [ val ] }
  * // any signal can be the detune modulator
  * osc('sawtooth', 1600, { detune: connect(...) }
  */
-function osc (type, frequency, opts) {
-  if (!opts) opts = OPTS;
-  var osc = context(opts).createOscillator();
+function osc (type, frequency, o) {
+  if (!o) o = OPTS;
+  var osc = context(o.context).createOscillator();
   osc.type = type || 'sine';
   return lifecycle(osc, [
     plug('frequency', frequency, osc),
-    plug('detune', opts.detune, osc)
+    plug('detune', o.detune, osc)
   ])
 }
 /**
@@ -728,8 +783,6 @@ function lfo (freq, amp, o) {
 }
 
 /** @module filters */
-var OPTS$1 = {};
-
 /**
  * Create a filter (a [BiquadFilterNode](https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode))
  *
@@ -746,8 +799,8 @@ var OPTS$1 = {};
  * connect(square(800), filter('lowpass', 400))
  */
 function filter (type, frequency, o) {
-  o = o || OPTS$1;
-  var filter = context(o).createBiquadFilter();
+  o = o || OPTS;
+  var filter = context(o.context).createBiquadFilter();
   filter.type = type || 'lowpass';
   return lifecycle(filter, [
     plug('frequency', frequency, filter),
@@ -865,8 +918,6 @@ function decodeAudio (ac, arrayBuffer) {
  *
  * @module buffers
  */
-var OPTS$2 = {};
-
 /**
  * Create a buffer source (a BufferSourceNode)
  * @param {Buffer|Function} buffer - the buffer (or a function that returns a buffer)
@@ -882,8 +933,8 @@ var OPTS$2 = {};
  * source(sample('amen-break.mp3'), { loop: true })
  */
 function source (buffer, o) {
-  o = o || OPTS$2;
-  var src = context(o).createBufferSource();
+  o = o || OPTS;
+  var src = context(o.context).createBufferSource();
   src.buffer = isA('function', buffer) ? buffer() : buffer;
   if (!src.buffer) console.warn('Buffer not ready.');
   if (o.loop) src.loop = true;
@@ -929,12 +980,12 @@ function source (buffer, o) {
  */
 function gen (generators, samples, o) {
   samples = samples || 2;
-  o = o || OPTS$2;
+  o = o || OPTS;
   return function () {
     if (!Array.isArray(generators)) generators = [ generators ];
     var reverse = o.reverse;
     var numOfChannels = generators.length;
-    var ctx = context(o);
+    var ctx = context(o.context);
 
     var buffer = ctx.createBuffer(numOfChannels, samples, samplingRate(ctx));
     for (var ch = 0; ch < numOfChannels; ch++) {
@@ -965,53 +1016,52 @@ function white (samples, options) {
 }
 function whiteGen () { return Math.random() * 2 - 1 }
 
-/** @module envelopes */
-function schedule (param, shape, times, types, ac) {
-  return function (time, delay) {
-    console.log(shape, times, types);
-    var type;
-    time = when(time, delay, ac);
-    var lt = times.length;
-    var tp = types.length;
-    shape.forEach(function (value, i) {
-      time += times[i % lt];
-      type = types[i % tp];
-      console.log(value, time, type);
-      if (type === 'set') param.setValueAtTime(value, time);
-      else if (type === 'exp') param.exponentialRampToValueAtTime(value === 0 ? 0.00001 : value, time);
-      else param.linearRampToValueAtTime(value, time);
-    });
-  }
-}
-
-function env (shape, times, types, ac) {
-  var ctx = context(ac);
-  var gain$$1 = ctx.createGain();
-  gain$$1.gain.value = 0;
-  gain$$1.start = schedule(gain$$1.gain, shape, times, types, ctx);
-  return gain$$1
-}
-
-function toNum (num, def) { return isA('number', num) ? num : def }
 /**
- * An attack-decay-sustain-(hold)-decay envelope
+ *
+ * @module envelopes
  */
-function adshr (attack, decay, sustain, hold, release, ac) {
-  attack = toNum(attack, 0.01);
-  decay = toNum(decay, 0.1);
-  sustain = toNum(sustain, 1);
-  hold = toNum(hold, 0);
-  release = toNum(release, 0.3);
-  return env([0, 1, sustain, sustain, 0],
-    [0, attack, decay, hold, release],
-    ['set', 'lin', 'set', 'exp'], ac)
-}
+function eachStage (stages, fn) { stages.forEach(function (s) { fn.apply(null, s); }); }
 
 /**
- * An attack-decay envelope
+ * Create an attack-decay envelope with fixed duration. It's composed by a
+ * linear attack ramp and an exponential decay. This envelope doesn't
+ * have release, so it stops after the duration (attack + decay).
+ *
+ * @param {Number} attack - (Optional) the attack time, defaults to 0.01
+ * @param {Number} decay - (Optional) the decay time, defaults to 0.2
+ * @param {Object} options - (Optional) an options with a context
+ * @return {AudioNode} the signal envelope
+ * @example
+ * connect(sine(1000), perc(0.01, 0.5))
+ * connect(sine(1000), perc(null, 1)) // default attack
+ * connect(sine(1000), perc()) // default values
  */
-function perc (attack, decay, ac) {
-  return adshr(attack, 0, 1, 0, decay, ac)
+function perc (attack, decay, opts) {
+  var a = [ [0, 0, 'set'], [attack || 0.01, 1, 'lin'], [decay || 0.2, 0, 'exp'] ];
+  return envelope(a, null, opts)
+}
+
+var ADSR = [0.01, 0.1, 0.8, 0.3];
+/**
+ * Create an adsr envelope
+ * @params {Object} options - (Optional) the options may include:
+ *
+ * - adsr: an array with the form [attack, decay, sustain, release]
+ * - attack: the attack time (will override the a in the adsr param)
+ * - decay: the decay time (will override the d in adsr param)
+ * - sustain: the sustain gain value (will override the s in the adsr param)
+ * - release: the release time (will override the r in the adsr param)
+ */
+function adsr (o) {
+  o = o || OPTS;
+  var adsr = o.adsr || ADSR;
+  if (!isA('number', o.attack)) o.attack = adsr[0];
+  if (!isA('number', o.decay)) o.decay = adsr[1];
+  if (!isA('number', o.sustain)) o.sustain = adsr[2];
+  if (!isA('number', o.release)) o.release = adsr[3];
+  var a = [ [0, 0, 'set'], [o.attack, 1, 'lin'], [o.decay, o.sustain, 'exp'] ];
+  var r = [ [0, o.sustain, 'set'], [o.release, 0, 'exp'] ];
+  return envelope(a, r, o)
 }
 
 /**
@@ -1019,15 +1069,60 @@ function perc (attack, decay, ac) {
  * number of octaves.
  * @param {Number} frequency - the initial frequency
  * @param {Number} octaves - (Optional) the number of octaves of the envelope (1 by default)
- * @param {Number} attack - (Optional) the attack length in seconds
- * @param {Number} decay - (Optional) the decay length in seconds
- * @param {Number} sustain - (Optional) the sustain gain (from 0 to 1)
- * @param {Number} release - (Optional) the release length in seconds
- * @param {AudioContext} context - the optional audio context
+ * @param {Object} options - the same options as an ADSR envelope
+ * @see adsr
+ * @example
+ * connect(saw(1200), lowpass(freqEnv(440, 2, { release: 1 })))
  */
-function freqEnv (freq, octs, a, d, s, r, ac) {
-  // TODO: use adsr
-  return scale(freq, freq * Math.pow(2, octs), adshr(a, d, s, 0, r, ac))
+
+
+/**
+ * @private
+ * Create a gain envelope
+ * @param {Array<Stage>} attStages - the attack part of the envelope
+ * @param {Array<Stage>} relStages - the release part of the envelope
+ */
+function envelope (attEnvelope, relEnvelope, opts) {
+  var g = gain(0, opts);
+  g.start = apply(g.gain, attEnvelope);
+  if (!relEnvelope) {
+    g.duration = duration(attEnvelope);
+  } else {
+    g.stop = apply(g.gain, relEnvelope);
+  }
+  return g
+}
+
+/**
+ * Apply a contour to a parameter
+ * @param {AudioParam} param - the parameter to apply the contour to
+ * @param {Array<Stage>} contour - a list of countour stages, each of which
+ * is composed of [time, value, type].
+ * @private
+ * @example
+ * apply(filter.frequency, [ [0, 440, 'set'], [5, 880, 'lin'] ])
+ */
+function apply (param, contour) {
+  console.log('contour', contour.join(','));
+  return function (when) {
+    eachStage(contour, function (time, value, type) {
+      when += time;
+      if (type === 'set') param.setValueAtTime(value, when);
+      else if (type === 'lin') param.linearRampToValueAtTime(value, when);
+      else if (type === 'exp') param.exponentialRampToValueAtTime(value !== 0 ? value : 0.00001, when);
+      else console.warn('Invalid stage type', time, value, type);
+    });
+  }
+}
+
+/**
+ * @private
+ * Calculate the duration of a contour
+ */
+function duration (contour) {
+  return contour.reduce(function (dur, stage) {
+    return dur + stage[0]
+  }, 0)
 }
 
 /** @module effects */
@@ -1095,8 +1190,57 @@ function delay (time, filter$$1, feedAmount, ac) {
   return feedback(feedAmount, dly(time, ac), filter$$1, ac)
 }
 
-/** @module instrument */
-var slice$1 = Array.prototype.slice;
+/**
+ *
+ * @module synth
+ */
+/**
+ * A basic subtractive processing unit (one filter, and two envelopes)
+ *
+ * @param {AudioNode|Number|String} source - The subtractive synth source
+ * @param {Object} options - (Optional) the configuration may include:
+ *
+ * - gain: the gain (defaults to 1)
+ * - adsr: the parameters of the gain envelop in the form [attack, decay, sustain, release]
+ * - attack, decay, sustain, release: the parameters of the gain envelope. It
+ * will override the one provided by adsr parameter if any
+ * - filter: an object with the filter properties
+ * - filter.type: the filter type ('lowpass' by default)
+ * - filter.frequency: the filter frequency (can be follow to use the options.frequency value)
+ * - filter.adsr: the filter envelope
+ * - filter.attack, filter.decay, filter.sustain, filter.release: the individual
+ * filter envelope parameters
+ * - filter.octaves: the number of the octaves of the filter envelope (1 by default)
+ *
+ * @function
+ * @example
+ * connect(sine(300), subtractive(0.5, { adsr: [0.01, 0.1, 0.8, 1], filter: { type: 'lowpass', frequency: 300 } }))
+ * subtractive({ attack: 0.1 })
+ */
+var subtractive = withOptions(function (o) {
+  return connect(adsr(o), filter(o.filter), gain(o))
+}, {
+  defaults: {
+    adsr: [0.01, 0.1, 0.8, 1],
+    filter: {
+      type: 'lowpass',
+      frequency: 'follow',
+      octaves: 2,
+      adsr: [0.1, 0.1, 0.5, 1]
+    },
+    gain: 1
+  },
+  toOptions: function (value, opts) {
+    var o = Object.assign({}, opts);
+    if (isA('function', value)) o.source = value;
+    else if (value > 1) o.frequency = value;
+    else o.gain = value;
+    return o
+  },
+  prepare: function () {
+
+  }
+});
 
 /**
  * Decorate a function to receive a options object. This decoration ensures that
@@ -1104,16 +1248,14 @@ var slice$1 = Array.prototype.slice;
  * goodies like convert from note names to frequencies, provide a context
  * option with the AudioContext or wrap notes into { frequency: ... } object.
  *
- * The possible values of the config object are:
- *
- * - defaults: If provided, the defaults object will be merged with the options
- * - toOptions: a function that is called if the given parameter is not an
- * options configuration. If not provided, by default it will put the parameter
- * as the frequency of the options (see example)
- *
  * @param {Function} synth - the synth function (a function that returns a
  * graph of audio nodes)
- * @param {Object} config - the configuration
+ * @param {Object} config - (Optional) the configuration may include:
+ *
+ * - defaults: If provided, the defaults object will be merged with the options
+ * - toOptions: a function that receives the paramters and returns an object
+ * - prepare: a function that can modify the options before call the function
+ *
  * @return {Function} a decorated synth function
  * @example
  * var synth = withOptions(function (o) {
@@ -1128,17 +1270,39 @@ var slice$1 = Array.prototype.slice;
  * synth('A4') // equivalent to: synth({ frequency: 440 })
  */
 function withOptions (fn, config) {
-  config = config || {};
-  config.toOptions = config.toOptions || freqAndContextToOpts;
+  config = config || OPTS;
   return function (options) {
-    if (!isA('object', options)) options = config.toOptions.apply(null, arguments);
-    return fn(Object.assign({}, config.defaults, options))
+    var toOptions = config.toOptions || freqAndContextToOpts;
+    if (!isA('object', options)) options = toOptions.apply(null, arguments);
+    if (config.prepare) config.prepare(options);
+    return fn(assign({}, config.defaults, options))
   }
 }
-function freqAndContextToOpts (frequency, context$$1) {
-  return { frequency: frequency, context: context$$1 }
+function freqAndContextToOpts (frequency, context) {
+  return { frequency: frequency, context: context }
 }
 
+/**
+ * @private let me think more about it
+ * Decorate a synth to use a destination. A synth is any function that
+ * returns an audio node
+ * @param {Function} synth - the audio node builder
+ * @param {AudioNode} destination - (Optional) destination (or the default destination)
+ * @return {Function} the decorated synth function
+ * @example
+ * // TODO: write a common example
+ * var synth = withDest(sine, dest())
+ * synth(300).start()
+ */
+function withDest (synth, dest) {
+  return function (value) {
+    var node = synth ? synth(value) : value;
+    if (dest) node.connect(dest);
+    return node
+  }
+}
+
+/** @module instrument */
 /**
  * A master output instrument. You can use it to start and stop nodes. All
  * started nodes will be connected to the AudioContext destination.
@@ -1159,15 +1323,18 @@ var master = inst(null, dest());
  *
  * - `start(node, when, delay, duration)`: start a node
  * - `stop`: stop all nodes
- * - `on(event, callback)`: add an event callback
- * - `trigger(event, ...values)`: make the player trigger an event
+ * - `on(name, callback)`: add an event callback
+ * - `event(name, ...values)`: fire an event
  *
  *
  * @param {Function} synth - the synth function (a function that returns a node graph)
  * @param {AudioNode} destination - if present, all nodes will be connected to
  * this destination
- * @param {Integer} maxVoices - (Optional) the maximum number of simultaneous
- * voices (0 means no limit, defaults to 0)
+ * @param {Object} options - (Optional) the options may include:
+ *
+ * - maxVoices: the maximum number of simultaneous voices. No value (by default)
+ * means no limit.
+ *
  * @return {Player} a player object
  *
  * @example
@@ -1182,66 +1349,89 @@ var master = inst(null, dest());
  * master.start(sine(400))
  * master.stopAll()
  */
-function inst (synth, destination, maxVoices) {
-  var i = {};
-  var voices = initVoices(maxVoices);
-  i.start = function (value, time, delay, duration) {
-    var node = isA('function', synth) ? synth(value) : value;
-    if (destination) node.connect(destination);
+function inst (synth, destination, options) {
+  synth = withDest(synth, destination || dest());
+  return tracker(synth, options || OPTS)
+}
 
-    trackNode(voices, node);
-    time = when(time, delay, context(destination));
-    node.start(time);
-    if (duration) node.stop(time + duration);
+/**
+ * @private
+ * tracker: (fn: (object) => Node, options: object) => interface { start: fn, stop: fn }
+ */
+function tracker (synth, opts) {
+  var ob = observable({});
+  var limit = opts ? opts.maxVoices : 0;
+  var voices = { limit: limit, all: {}, nextId: 0, current: 0, pool: new Array(limit) };
+
+  function track (node) {
+    node.id = voices.nextId++;
+    voices.all[node.id] = node;
+    on(node, 'ended', function () {
+      delete voices.all[node.id];
+      ob.event('voices', Object.keys(voices.all), limit);
+    });
+    return node
+  }
+
+  ob.start = function (value, time, delay, duration) {
+    var node = synth(value);
+    if (node.start) {
+      track(node);
+      time = start(node, time, delay, duration).startedAt;
+      ob.event('start', node.id, time);
+      ob.event('voices', Object.keys(voices.all), limit);
+    }
     return node
   };
-  i.track = trackNode.bind(null, voices);
-  i.stop = function () { return stopAll(voices) };
-  i.inst = function (synth, maxVoices) { return inst(synth, destination, maxVoices) };
-  i.on = on.bind(null, i);
-  i.trigger = trigger.bind(null, i);
-  return i
+  ob.stop = function (ids, time, delay) {
+    var t = 0;
+    ids = toArr(ids || ids === 0 ? ids : Object.keys(voices.all));
+    ids.forEach(function (id) {
+      if (voices.all[id]) {
+        if (!t) t = when(time, delay, voices.all[id].context);
+        voices.all[id].stop(t);
+      }
+    });
+  };
+  return ob
 }
 
-// init a voices data object
-function initVoices (limit) {
-  limit = limit || 0;
-  return { limit: limit, all: {}, nextId: 0, current: 0, pool: new Array(limit) }
-}
 
-// add a given node to the voices data object
-function trackNode (voices, node) {
-  node.id = voices.nextId++;
-  voices.all[node.id] = node;
-  on(node, 'ready', function (_, name) {
-    console.log('Instrument ready:', name);
-  });
+function start (node, time, delay, duration) {
+  time = when(time, delay, context(node.context));
+  node.start(time);
+  node.startedAt = time;
+  var d = duration || node.duration;
+  if (d) node.stop(time + d);
   return node
 }
 
-// stop all voices from the voices data object
-function stopAll (voices) {
-  Object.keys(voices.all).forEach(function (id) {
-    voices.all[id].stop();
-  });
+// EVENTS
+// ======
+// decorate an objet to have `on` and `event` methods
+function observable (obj) {
+  obj.on = on.bind(null, obj);
+  obj.event = event.bind(null, obj);
+  return obj
 }
 
 // add a listener to a target
-function on (target, event, callback) {
-  if (!event || event === '*') event = 'event';
-  var prev = target['on' + event];
-  target['on' + event] = function () {
+function on (target, name, callback) {
+  if (!name || name === '*') name = 'event';
+  var prev = target['on' + name];
+  target['on' + name] = function () {
     if (prev) prev.apply(null, arguments);
     callback.apply(null, arguments);
   };
+  return target
 }
 
-// trigger an event
-function trigger (target, event /*, ...values */) {
-  if (!isA('function', target['on' + event])) return
-  var args = slice$1.call(arguments, 2);
-  target['on' + event].apply(null, args);
+// fire an event
+function event (target, name /*, ...values */) {
+  var args = slice.call(arguments, 1);
+  if (isA('function', target['on' + name])) target['on' + name].apply(null, args);
   if (isA('function', target.onevent)) target.onevent.apply(null, args);
+  return target
 }
 
 exports.context = context;
@@ -1279,17 +1469,16 @@ exports.white = white;
 exports.load = load;
 exports.decodeAudio = decodeAudio;
 exports.fetch = fetch;
-exports.adshr = adshr;
 exports.perc = perc;
-exports.freqEnv = freqEnv;
 exports.mix = mix;
 exports.feedback = feedback;
 exports.tremolo = tremolo;
 exports.dly = dly;
 exports.delay = delay;
+exports.withOptions = withOptions;
+exports.subtractive = subtractive;
 exports.inst = inst;
 exports.master = master;
-exports.withOptions = withOptions;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
@@ -1564,31 +1753,37 @@ function instrument (name, config) {
   var sample = function (midi) {
     if (buffers) return buffers[midi]
     console.warn('Instrument "' + name + '" not loaded yet.')
-    return _.generate(function () { return 0 }, 2)
+    return _.gen(function () { return 0 }, 2)
   }
   var synth = function (o) {
+    console.log('sf synth', o)
     return _.connect(
-      _.source(sample(o.midi), o.loop, o.detune),
-      _.filter(o.filter.type, o.filter.freq),
+      _.source(sample(o.midi), o),
+      _.filter(o.filter.type, o.filter.frequency, o.filter),
       /* adsr(o), */
-      _.gain(o.gain)
+      _.gain(o)
     )
   }
-  var instOpts = Object.assign({}, INST_DEFAULTS, config)
-  synth = _.withOptions(synth, { defaults: instOpts, toOptions: prepareOptions })
+
+  synth = _.withOptions(synth, {
+    defaults: Object.assign({}, INST_DEFAULTS, config),
+    toOptions: toOptions,
+    prepare: prepareOptions
+  })
   var sf = _.inst(synth, _.dest())
   load(name, config).then(function (result) {
     buffers = result
-    sf.trigger('ready', sf, name)
+    sf.event('ready', sf, name)
   })
   return sf
 }
 
-function prepareOptions (o) {
-  if (!o) o = {}
-  else if (is('number', o)) o = { midi: o }
-  else if (!is('object', o)) o = { name: o }
+function toOptions (note, context) {
+  return is('number', note) ? { midi: note, context: context }
+    : { note: note, context: context }
+}
 
+function prepareOptions (o) {
   var note = Note.parse(o.name || o.note)
   if (!o.note && note) o.note = Note.build(note)
   if (!o.midi && note) o.midi = note.midi
@@ -1685,6 +1880,9 @@ module.exports = {
 
 },{"..":1}],6:[function(require,module,exports){
 var SynthKit = require('.')
+window.log = function (name) {
+  return console.log.bind(console, name)
+}
 SynthKit.start = SynthKit.master.start
 SynthKit.stop = SynthKit.master.stop
 
@@ -1713,6 +1911,13 @@ SynthKit.live = function () {
     window[name] = SynthKit[name]
     names.push(name)
   })
+  window.inst = function (synth, dest, opts) {
+    var i = SynthKit.inst(synth, dest, opts)
+    i.on('ready', function (_, name) {
+      console.log('Instrument ready: ', name)
+    })
+    return i
+  }
   console.log('SynthKit live', 10, names.length)
   console.log(names.join(', '))
 }

@@ -54,31 +54,37 @@ function instrument (name, config) {
   var sample = function (midi) {
     if (buffers) return buffers[midi]
     console.warn('Instrument "' + name + '" not loaded yet.')
-    return _.generate(function () { return 0 }, 2)
+    return _.gen(function () { return 0 }, 2)
   }
   var synth = function (o) {
+    console.log('sf synth', o)
     return _.connect(
-      _.source(sample(o.midi), o.loop, o.detune),
-      _.filter(o.filter.type, o.filter.freq),
+      _.source(sample(o.midi), o),
+      _.filter(o.filter.type, o.filter.frequency, o.filter),
       /* adsr(o), */
-      _.gain(o.gain)
+      _.gain(o)
     )
   }
-  var instOpts = Object.assign({}, INST_DEFAULTS, config)
-  synth = _.withOptions(synth, { defaults: instOpts, toOptions: prepareOptions })
+
+  synth = _.withOptions(synth, {
+    defaults: Object.assign({}, INST_DEFAULTS, config),
+    toOptions: toOptions,
+    prepare: prepareOptions
+  })
   var sf = _.inst(synth, _.dest())
   load(name, config).then(function (result) {
     buffers = result
-    sf.trigger('ready', sf, name)
+    sf.event('ready', sf, name)
   })
   return sf
 }
 
-function prepareOptions (o) {
-  if (!o) o = {}
-  else if (is('number', o)) o = { midi: o }
-  else if (!is('object', o)) o = { name: o }
+function toOptions (note, context) {
+  return is('number', note) ? { midi: note, context: context }
+    : { note: note, context: context }
+}
 
+function prepareOptions (o) {
   var note = Note.parse(o.name || o.note)
   if (!o.note && note) o.note = Note.build(note)
   if (!o.midi && note) o.midi = note.midi

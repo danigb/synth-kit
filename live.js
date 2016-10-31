@@ -1,4 +1,7 @@
 var SynthKit = require('.')
+window.log = function (name) {
+  return console.log.bind(console, name)
+}
 SynthKit.start = SynthKit.master.start
 SynthKit.stop = SynthKit.master.stop
 
@@ -27,6 +30,13 @@ SynthKit.live = function () {
     window[name] = SynthKit[name]
     names.push(name)
   })
+  window.inst = function (synth, dest, opts) {
+    var i = SynthKit.inst(synth, dest, opts)
+    i.on('ready', function (_, name) {
+      console.log('Instrument ready: ', name)
+    })
+    return i
+  }
   console.log('SynthKit live', 10, names.length)
   console.log(names.join(', '))
 }
