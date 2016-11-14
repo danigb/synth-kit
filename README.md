@@ -53,7 +53,7 @@ var kick = sample('http://myserver.com/samples/kick.mp3')
 source(kick).start()
 ```
 
-Notice you will need to st
+Notice that the file must be fetched before get any sound, so if in the previous example `start` is called before loading the file, no sound in produced.
 
 
 #### Filters and envelopes

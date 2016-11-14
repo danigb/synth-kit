@@ -43,7 +43,7 @@ var proto = Object.getPrototypeOf(Object.getPrototypeOf(index.createGain()));
 var _connect = proto.connect;
 proto.connect = function () {
   _connect.apply(this, arguments);
-  console.log('connect!', this);
+  console.log('connect!', this, arguments[0]);
   return this
 };
 
@@ -350,7 +350,7 @@ function hz (value, base) {
  *  @param  {Number} db
  *  @return {Number} the gain (from 0 to 1)
  */
-function dB (db) { return pow(2, db / 6) }
+function dBToGain (db) { return pow(2, db / 6) }
 
 /**
  *  Convert gain to decibels.
@@ -431,9 +431,9 @@ function conn (nodes) {
     node.duration = Math.max(node.duration, dest$$1.duration || 0);
     return dest$$1
   });
-  setOutput(node, last);
-  var startables = startable(nodes.slice(1));
-  if (startables) {
+  overrideConnect(node, last);
+  var startables = nodes.slice(1).filter(isStartable);
+  if (startables.length) {
     var _start = node.start;
     node.start = function (time) {
       if (_start) _start.call(node, time);
@@ -471,14 +471,24 @@ function add (nodes) {
 
   var context$$1 = nodes[0].context;
   var input = context$$1.createGain();
+  input.id = 'ADDin';
   var output = context$$1.createGain();
-  setOutput(input, output);
+  output.id = 'ADDout';
+  // the connection loop: connect input to all nodes. all nodes to output.
   nodes.forEach(function (node) {
     if (node.numberOfInputs) input.connect(node);
     node.connect(output);
   });
+  // this must be after the connection loop
+  overrideConnect(input, output);
   var node = lifecycle(input, nodes);
-  // fake onended when all onended is called
+  addOnEndedEvent(node);
+  return node
+}
+
+// make trigger an onended event when all startable node ended
+function addOnEndedEvent (node) {
+  if (!node.dependents) return
   var length = node.dependents.length;
   function triggerEnded () {
     length--;
@@ -487,11 +497,10 @@ function add (nodes) {
   node.dependents.forEach(function (node) {
     node.onended = triggerEnded;
   });
-  return node
 }
 
-// TODO: better name
-function setOutput (node, output) {
+// overrides the node's connect function to use output node
+function overrideConnect (node, output) {
   node.output = node;
   node.connect = function (dest$$1) {
     output.connect(dest$$1);
@@ -501,14 +510,10 @@ function setOutput (node, output) {
 }
 
 /**
- * Given a list of nodes, return the ones that are startable
+ * Return if a node is startable or note
  * @private
  */
-function startable (nodes) {
-  return nodes.filter(function (dep) {
-    return dep && typeof dep.start === 'function'
-  })
-}
+function isStartable (node) { return node && typeof node.start === 'function' }
 
 /**
  * Plug something (a value, a node) into a node parameter
@@ -536,21 +541,22 @@ function plug (name, value, node) {
  * @private
  */
 function lifecycle (node, dependents) {
-  node.dependents = startable(dependents);
-  if (node.dependents.length) {
+  dependents = dependents.filter(isStartable);
+  if (dependents.length) {
     var _start = node.start;
     var _stop = node.stop;
     node.start = function (time) {
       var res = _start ? _start.call(node, time) : void 0;
-      node.dependents.forEach(function (d) { if (d.start) d.start(time); });
+      dependents.forEach(function (d) { if (d.start) d.start(time); });
       if (node.start.then) node.start.then(time, node, dependents);
       return res
     };
     node.stop = function (time) {
       var res = _stop ? _stop.call(node, time) : void 0;
-      node.dependents.forEach(function (d) { if (d.stop) d.stop(time); });
+      dependents.forEach(function (d) { if (d.stop) d.stop(time); });
       return res
     };
+    node.dependents = dependents;
   }
   return node
 }
@@ -570,11 +576,15 @@ function lifecycle (node, dependents) {
  * @example
  * // with modulation (kind of tremolo)
  * conn(sine(400), gain(sine(10)))
+ * @example
+ * using a configuration object
+ * gain({ gain: 0.5, context: <AudioContext> })
  */
-function gain (gain, o) {
-  var amp = context(o ? o.context : null).createGain();
-  return lifecycle(amp, [
-    plug('gain', gain, amp)
+function gain (gain, opts) {
+  if (arguments.length === 1 && !isA('number', gain)) return gain(gain.gain, gain)
+  var node = context(opts ? opts.context : null).createGain();
+  return lifecycle(node, [
+    plug('gain', gain, node)
   ])
 }
 
@@ -617,7 +627,10 @@ function constant (value, o) {
  * freq.value.linearRampToValueAtTime(880, after(5))
  */
 function signal (value, opts) {
-  return conn(constant(1, opts), gain(value, opts)).start()
+  var signal = gain(value, opts);
+  conn(constant(1, opts), signal).start();
+  signal.signal = signal.gain;
+  return signal
 }
 
 /**
@@ -641,9 +654,10 @@ function bypass (o) {
  *
  * @example
  * // a vibrato effect
- * sine(440, mult(500, sine(tempo(160))))
+ * sine(440, { detune: mult(500, sine(tempo(160))) })
  */
 function mult (value, signal, opts) {
+  if (isA('number', signal)) return value * signal
   return conn(signal, gain(value, opts))
 }
 
@@ -840,6 +854,7 @@ const hipass = filter.bind(null, 'highpass');
 const bandpass = filter.bind(null, 'hipass');
 
 /* global XMLHttpRequest */
+var NONE = {};
 /**
  * This module contains some functions to fetch and decode audio files.
  *
@@ -849,15 +864,19 @@ const bandpass = filter.bind(null, 'hipass');
 /**
  * Load a remote audio file and return a promise.
  * @param {String} url
- * @param {AudioContext} context - (Optional)
+ * @param {Object} options - (Optional) may include:
+ *
+ * - context: the audio context
+ *
  * @return {Promise<AudioBuffer>} a promise that resolves to an AudioBuffer
  * @example
  * load('sound.mp3').then(function (buffer) {
  *   sample(buffer, true).start()
  * }
  */
-function load (url, ac) {
-  return fetch(url, 'arraybuffer').then(decodeAudio(ac))
+function load (url, opts) {
+  opts = opts || NONE;
+  return fetch(url, 'arraybuffer').then(decodeAudio(context(opts.context)))
 }
 
 /**
@@ -953,7 +972,17 @@ function source (buffer, o) {
  *     source(buffer).start()
  * })
  */
-
+function sample (url, opts) {
+  var bf = null;
+  function buffer () { return bf }
+  var promise = load(url, opts).then(function (buffer) {
+    buffer.url = url;
+    bf = buffer;
+    return bf
+  });
+  buffer.then = promise.then.bind(promise);
+  return buffer
+}
 
 /**
  * Generate a BufferNode. It returns a no-parameter function that
@@ -1003,9 +1032,9 @@ function generateData (generator, data, samples, reverse) {
  */
 function white (samples, options) {
   if (!isA('number', samples)) samples = samplingRate(options);
-  return source(gen(whiteGen, samples, options), options)
+  return source(gen(white.generator, samples, options), options)
 }
-function whiteGen () { return Math.random() * 2 - 1 }
+white.generator = function () { return Math.random() * 2 - 1 };
 
 /**
  *
@@ -1028,6 +1057,7 @@ function eachStage (stages, fn) { stages.forEach(function (s) { fn.apply(null, s
  * conn(sine(1000), perc()) // default values
  */
 function perc (attack, decay, opts) {
+  if (isA('object', attack)) return perc(attack.attack, attack.decay, attack)
   var a = [ [0, 0, 'set'], [attack || 0.01, 1, 'lin'], [decay || 0.2, 0, 'exp'] ];
   return envelope(a, null, opts)
 }
@@ -1124,18 +1154,26 @@ function duration (contour) {
  * effect bus.
  * @param {Number} wet - the amount of effect (0-1)
  * @param {AudioNode} fx - the effect unit
+ * @param {Object} options - (Optional) may include:
+ *
+ * - compensate: it it's false, the dry signal gain will pass without reduction.
+ * If true (it's true by default) the dry signal is reduced the gain of the wet signal.
+ * - context: the audio context
+ *
  * @return {AudioNode}
  * @example
  * mix(dB(-3), delay(ms(800)))
  * @example
  * // create an effect bus
- * var fxs = mix(conn(reverb(0.1), delay([ms(20), ms(21)])))
- * conn(sine(300), fxs(0.2))
+ * var rev = mix(reverb(2))
+ * conn(sine(300), rev(0.2))
  */
-function mix (fx, wet, norm) {
-  if (arguments.length === 1) return function (w, n) { return mix(fx, w, n) }
+function mix (wet, fx, opts) {
+  if (arguments.length === 1) return function (w, o) { return mix(w, wet, o) }
   if (!isA('number', wet)) wet = 0.5;
-  var dry = norm === false ? 1 : 1 - wet;
+  opts = opts || OPTS;
+  var dry = opts.compensate === false ? 1 : 1 - wet;
+  console.log('MIX', wet, dry, opts);
   return add(gain(dry), conn(fx, gain(wet)))
 }
 
@@ -1167,11 +1205,69 @@ function tremolo (rate, type, ac) {
 /**
  * Create a delay (a DelayNode object)
  */
-function dly (time, ac) {
-  var dly = context(ac).createDelay(5);
+function dly (time, opts) {
+  opts = opts || OPTS;
+  var dly = context(opts.context).createDelay(5);
   return lifecycle(dly, [
     plug('delayTime', time, dly)
   ])
+}
+
+/**
+ * Create a convolver
+ * @param {AudioBuffer} buffer
+ * @param {Object} options - (Optional) options may include:
+ *
+ * - normalize: true to normalize the buffer
+ * - context: the audio context to use
+ *
+ * @return {AudioNode} the convolver (ConvolverNode)
+ * @example
+ * reverb = mix(convolve(sample('emt-140.wav')))
+ * connect(subtractive(880, { perc: [0.1, 1] }), reverb(0.2))
+ */
+function convolve (buffer, o) {
+  o = o || OPTS;
+  var c = context(o.context).createConvolver();
+  c.buffer = isA('function', buffer) ? buffer() : buffer;
+  if (o.normalize === true) c.normalize = true;
+  return c
+}
+
+/**
+ * Create a reverb impulse response using a logarithmic decay white noise
+ * @param {Number} duration - the duration in samples
+ * @param {Object} options - (Optional) options may include:
+ *
+ * - decay: the decay length in samples
+ * - attack: the attack time in samples
+ * - reverse: get the reversed impulse
+ * - context: the context to use
+ *
+ * @return {AudioBuffer} the impulse response audio buffer
+ */
+function decayIR (samples, opts) {
+  samples = samples || 10000;
+  opts = opts || OPTS;
+  var attack = opts.attack || Math.floor(samples / 10);
+  var decay = opts.decay || samples - attack;
+  // 60dB is a factor of 1 million in power, or 1000 in amplitude.
+  var base = Math.pow(1 / 1000, 1 / decay);
+  return gen(function (i) {
+    var dec = base ? Math.pow(base, i) : 1;
+    var att = i < attack ? (i / attack) : 1;
+    return att * white.generator(i) * dec
+  }, samples, opts)
+}
+
+/**
+ * Create a simple reverb
+ * @param {Number} duration - in seconds? WTF?
+ */
+function reverb (duration, opts) {
+  opts = opts || OPTS;
+  var rate = samplingRate(opts.context);
+  return convolve(decayIR(duration * rate, opts), opts)
 }
 
 /**
@@ -1184,19 +1280,75 @@ function delay (time, filter$$1, feedAmount, ac) {
 }
 
 /**
- * This module provides some higher level abstraction components, like
- * prototypical subtractive and additive syntetizers that can be combined
- * in a audio node graph.
+ * This module provides some typical syntetizers components, like vca, vcf
+ * and some syntetizers
  * @example
  * // a dual osc synth sound
- * add(
-    subtractive(440, { type: 'square', filter: 'lowpass' }),
-    subtractive(880, { type: 'sine', filter: 'hipass' })
+ * synth(
+ *  frequency: 440,
+ *  oscillators: { ratios: [1, 5/7, 9/8], types: 'saw' },
+ *  attack: 0.1, release: 0.1,
+ *  filter: { frequency: 'follow' }
   ).connect(dest()).start()
  * @module synths
  */
 /**
- * A basic subtractive processing unit (one filter, and two envelopes)
+ * Decorate a function to have default configuration
+ */
+function withDefaults (synth, defaults) {
+  return function (options) {
+    return synth(assign({}, defaults, options))
+  }
+}
+
+/**
+ * Create a VCA: an amplifier controlled by an ADSR envelope
+ * @param {Object} options - may include:
+ *
+ * - db: the gain in decibels
+ * - gain: the gain (will override dB param)
+ * - attack, decay, sustain, release: the ADSR envelope parameters
+ * - context: the audio context
+ */
+const vca = withDefaults(function (opts) {
+  if (!isA('number', opts.gain)) opts.gain = dBToGain(opts.dB) || 1;
+  return conn(gain(opts), adsr(opts))
+}, {
+  dB: 0, // in dB
+  attack: 0.01, // attack time in seconds
+  decay: 0.1, // decay time in seconds
+  sustain: 0,
+  release: 0.1
+});
+
+/**
+ * Create a VCF: a filter controlled by an ADSR envelope
+ * @param {Object} config - may include:
+ *
+ * - type: filter type
+ * - frequency: filter frequency (can be a signal)
+ * - octaves: amplitude of the modulation in octaves (defaults to 2)
+ * - attack, decay, sustain, release: the adsr parameters
+ * - context: the audio context
+
+ * @example
+ * conn(square({ frequency: 800 }), vcf({ frequency: 400, attack: 0.1 }))
+ */
+const vcf = withDefaults(function (opts) {
+  var mod = conn(signal(mult(opts.octaves, opts.frequency)), adsr(opts));
+  return filter(opts.type, add(signal(opts.frequency), mod), opts)
+}, {
+  type: 'lowpass',
+  frequency: 22000,
+  octaves: 2,
+  attack: 0.01,
+  decay: 0.1,
+  sustain: 0,
+  release: 0.1
+});
+
+/**
+ * A subtractive synthetizer (oscillator bank -> VCF -> VCA)
  *
  * @param {AudioNode|Number|String} source - The subtractive synth source
  * @param {Object} options - (Optional) the configuration may include:
@@ -1215,74 +1367,56 @@ function delay (time, filter$$1, feedAmount, ac) {
  *
  * @function
  * @example
- * conn(sine(300), subtractive(0.5, { adsr: [0.01, 0.1, 0.8, 1], filter: { type: 'lowpass', frequency: 300 } }))
- * subtractive({ attack: 0.1 })
+ * // a 300Hz sawtooth with adsr and lowass filter at 600
+ * subtractive({ frequency: 300, type: 'sawtooth', adsr: [0.01, 0.1, 0.8, 1], filter: { type: 'lowpass', frequency: 600 } })
+ * // a custom source node
+ * substractive({ source: add(white(), square(500)), attack: 0.1, duration: 1 })
+ * // connected in a chain
+ * connect(sample('snare.wav', subtractive({ attack: 0.1 }))
  */
-var subtractive = withOptions(function (o) {
-  var source = isA('function', o.source) ? o.source(o)
-    : o.source ? o.source
-    : o.frequency ? osc(o.type, o.frequency)
-    : bypass();
-  var filt = o.filter.frequency ? filter(o.filter) : bypass();
-  return conn(source, adsr(o), filt)
-}, {
-  defaults: {
-    frequency: 440,
-    type: 'sawtooth',
-    adsr: [0.01, 0.1, 0.8, 1],
-    filter: {
-      type: 'lowpass',
-      frequency: null,
-      octaves: 2,
-      adsr: [0.1, 0.1, 0.5, 1]
-    },
-    gain: 1
-  },
-  toOptions: function (source, opts) {
-    if (isA('object', source)) return source
-    var o = Object.assign({}, opts);
-    if (isA('number', source)) o.frequency = source;
-    else o.source = source;
-    return o
-  },
-  prepare: function (o) {
-    if (o.filter.frequency === 'follow') o.filter.frequency = o.frequency;
-    return o
-  }
-});
+function subtractive (opts) {
+  opts = opts || OPTS;
+  return conn(bank(opts), vcf(opts.filter), vca(opts))
+}
 
 /**
- * Create a basic additive syntetizer. It returns a signal composed of the sum
- * of several oscillators with different gains.
+ * Create a bank of oscillators.
  *
  * @param {Array<Float>} frequencies - an array with the frequencies
  * @param {Object} options - (Optional) options can include:
  *
- * - frequency: if provided, the frequencies will be multiplied by this value
+ * - frequencies: an array with the frequencies of the oscillators (will
+ * override ratios)
+ * - ratios: an array of relative freqnecies of the oscillators (in combination
+ * iwth frequency paramter)
+ * - frequency: the base frequency of the oscillators (only used if frequencies)
  * - types: a value or an array of oscillator types. If the array is shorter
  * than the frequencies array, it's assumed to be circular.
  * - gains: a value or an array of gain values. If the array is shorter
  * than the frequencies array, it's assumed to be circular.
+ * - compensate: if true, the gain of the bank will be reduced by the number
+ * of oscillators (true by default)
  *
  * @return {AudioNode}
  *
  * @example
  * // create three sines with unrelated frequencies:
- * additive([1345.387, 435.392, 899.432])
- * // create three sawtooth with related frequencies:
- * additive([ 1, 2, 2.4 ], { frequency: 400, types: 'sawtooth' })
+ * bank({ frequencies: [1345.387, 435.392, 899.432] })
+ * // create three sawtooth with relative frequencies:
+ * bank({ frequency: 440, ratios: [1, 2, 2.4] , types: 'sawtooth' })
  * // create two squares of 400 and 800 and two sawtooths of 600 and 1200
  * // (the types are cyclic)
- * additive([400, 600, 800, 1200], { types: ['square', 'sawtooth'] })
+ * bank({ frequencies: [400, 600, 800, 1200], types: ['square', 'sawtooth'] })
  * // specify gains
- * additive([440, 660], { gains: [0.6, 0.2] })
+ * bank({ frequencies: [440, 660], gains: [0.6, 0.2] })
  */
-function additive (freqs, opts) {
-  if (!opts) opts = OPTS;
-  var base = opts.frequency || 1;
+function bank (opts) {
+  opts = opts || OPTS;
+  var base = opts.ratios ? opts.frequency || 440 : 1;
+  var freqs = toArr(opts.frequencies || opts.ratios || 440);
   var gains = toArr(opts.gains || 1);
   var types = toArr(opts.types || 'sine');
-  var N = opts.normalize === false ? 1 : freqs.length;
+  var N = opts.compensate === false ? 1 : freqs.length;
 
   var tl = types.length;
   var gl = gains.length;
@@ -1294,54 +1428,13 @@ function additive (freqs, opts) {
 }
 
 /**
- * Decorate a function to receive a options object. This decoration ensures that
- * the function always receive an options object. It also perform some other
- * goodies like convert from note names to frequencies, provide a context
- * option with the AudioContext or wrap notes into { frequency: ... } object.
- *
- * @param {Function} synth - the synth function (a function that returns a
- * graph of audio nodes)
- * @param {Object} config - (Optional) the configuration may include:
- *
- * - defaults: If provided, the defaults object will be merged with the options
- * - toOptions: a function that receives the paramters and returns an object
- * - prepare: a function that can modify the options before call the function
- *
- * @return {Function} a decorated synth function
- * @example
- * var synth = withOptions(function (o) {
- *    return conn(sine(o.frequency),
- *      filter(o.filter.type, o.filter.frequency || o.frequency))
- * }, {
- *  defaults: { frequency: 440, filter: { type: 'lowpass' } }
- * })
- * // It will convert note names into frequencies automatically
- * synth({ frequency: 'A4' })
- * // By default will convert note names to { frequency: <freq of note> }
- * synth('A4') // equivalent to: synth({ frequency: 440 })
- */
-function withOptions (fn, config) {
-  config = config || OPTS;
-  return function (options) {
-    var toOptions = config.toOptions || freqAndContextToOpts;
-    if (!isA('object', options)) options = toOptions.apply(null, arguments);
-    var opts = assign({}, config.defaults, options);
-    if (config.prepare) config.prepare(opts);
-    return fn(opts)
-  }
-}
-function freqAndContextToOpts (frequency, context) {
-  return { frequency: frequency, context: context }
-}
-
-/**
  * Decorate a synth to use a destination. A synth is any function that
  * returns an audio node
  * @param {Function} synth - the audio node builder
  * @param {AudioNode} destination - (Optional) destination (or the default destination)
  * @return {Function} the decorated synth function
  * @example
- * // TODO: write a common example
+ * // TODO: write a more realistic example
  * var synth = withDest(sine, dest())
  * synth(300).start()
  * // TODO: make this function public
@@ -1506,7 +1599,7 @@ exports.timeToSamples = timeToSamples;
 exports.tempo = tempo;
 exports.note = note;
 exports.hz = hz;
-exports.dB = dB;
+exports.dBToGain = dBToGain;
 exports.gainToDb = gainToDb;
 exports.conn = conn;
 exports.add = add;
@@ -1526,6 +1619,7 @@ exports.filter = filter;
 exports.lowpass = lowpass;
 exports.hipass = hipass;
 exports.bandpass = bandpass;
+exports.sample = sample;
 exports.gen = gen;
 exports.source = source;
 exports.white = white;
@@ -1539,9 +1633,14 @@ exports.feedback = feedback;
 exports.tremolo = tremolo;
 exports.dly = dly;
 exports.delay = delay;
-exports.withOptions = withOptions;
+exports.convolve = convolve;
+exports.decayIR = decayIR;
+exports.reverb = reverb;
+exports.withDefaults = withDefaults;
+exports.vca = vca;
+exports.vcf = vcf;
 exports.subtractive = subtractive;
-exports.additive = additive;
+exports.bank = bank;
 exports.inst = inst;
 exports.master = master;
 

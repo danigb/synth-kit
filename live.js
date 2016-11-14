@@ -5,9 +5,13 @@ window.log = function (name) {
 SynthKit.start = SynthKit.master.start
 SynthKit.stop = SynthKit.master.stop
 
+var basic = require('./instruments/basic')
+SynthKit.ping = basic.ping
+
 SynthKit.b3 = require('./instruments/b3')
 SynthKit.sf = require('./instruments/soundfont').instrument
 SynthKit.tr808 = require('./instruments/tr808')
+SynthKit.emt140 = require('./instruments/emt140')
 var sfnames = require('./instruments/sf-names.json')
 
 SynthKit.sf.names = function (group, num) {
