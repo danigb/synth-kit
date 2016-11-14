@@ -7,26 +7,29 @@
 `synth-kit` is a collection of functions to make Web Audio API more enjoyable. Here is some taste of what you get:
 
 ```js
-import { connect, add, sine, saw, lowpass, gain, adsr, dest, master } from 'synth-kit'
+import { conn, sine, saw, lowpass, adsr, dest, master, inst } from 'synth-kit'
 
 // start an OscillatorNode and connect it to AudioContext's destination
-sine(440).connect(dest()).start()
+sine('C4').connect(dest()).start()
 // start a chain of oscillator -> filter -> envelope -> destination
-conn(saw(1200), lowpass(500), adsr(), dest()).start()
+conn(saw('Db3'), lowpass(500), adsr(), dest()).start()
 
-// create a instrument with an oscillator and envelope:
+// start to master
+master.start(conn(square('C4'), adsr()))
+
+// create a instrument with an oscillator and an ADSR envelope:
 var synth = inst(function (freq) {
-  return connect(saw(freq), adsr())
+  return conn(saw(freq), adsr())
 })
 synth.start('C4')
 synth.start('G5')
 synth.stop()
 
 // create a substractive synth instrument with one oscillator:
-var mono = inst(substract())
+var mono = inst(substract)
 mono.start('C4')
-// a substractive synth instrument with two oscillators
-var duo = inst(add(substract(sine), substract(sine, { detune: -10 })))
+// a substractive synth instrument with three sine oscillators
+var duo = inst(substract, { oscillators: { ratios: [1, 2, 2.5 ] } })
 duo.start({ note: 'C4', attack: 0.5 })
 ```
 
@@ -34,23 +37,23 @@ duo.start({ note: 'C4', attack: 0.5 })
 
 #### Oscillators, buffers and sources
 
-The `osc(type, freq, detune)` function creates an OscillatorNode:
+The `osc` function creates an OscillatorNode:
 
 ```js
-osc('sawtooth', 880).connect(dest()).start()
+osc({ note: 'C4', type: 'square' }).connect(dest()).start()
 ```
 
 You can use any of its aliases: `sine`, `saw`, `triangle` or `square`:
 
 ```js
-sine(440).connect(dest()).start()
+sine('Db3').connect(dest()).start()
 ```
 
-You can load a sample with `sample(url, options)` function and play it with the `source(buffer, options)` function:
+You can load a sample with `load` function and play it with the `sample` function:
 
 ```js
-var kick = sample('http://myserver.com/samples/kick.mp3')
-source(kick).start()
+var kick = load('http://myserver.com/samples/kick.mp3')
+sample(kick).start()
 ```
 
 Notice that the file must be fetched before get any sound, so if in the previous example `start` is called before loading the file, no sound in produced.
@@ -58,7 +61,7 @@ Notice that the file must be fetched before get any sound, so if in the previous
 
 #### Filters and envelopes
 
-Filters are created using `filter(type, freq, Q, detune)` function (or any of its aliases: `lowpass`, `hipass` and `bandpass`):
+Filters are created using `filter` function (or any of its aliases: `lowpass`, `hipass` and `bandpass`):
 
 ```js
 saw(440).connect(lowpass(200)).start()
@@ -91,7 +94,7 @@ conn(sine(440), gain(0.5))
 Or route them in parrallel using the `add(...nodes)` function:
 
 ```js
-add(sine(440), sine(880))
+add(sine('c4'), sine('c5'), sine('g5'))
 ```
 
 These two functions can be combined creating complex audio node graphs:
@@ -112,18 +115,13 @@ add(
 You can pass a node to any audio parameter value to create modulations. For example, you can modulate the `detune` parameter of an oscillator with another oscillator to create a vibrato effect:
 
 ```js
-// the second argument is the sine detune parameter
-sine(440, mul(50, sine(10))).start()
-// Although there is an utility function for that:
-sine(440, detune(50, 10)).start()
+sine({ note: 'A4', detune: mul(50, sine(10)) }).start()
 ```
 
 Or, for example, you can modulate a `gain` to create a tremolo effect:
 
 ```js
-connect(saw(440), gain(sine(15))).start()
-// and there's also a function for that:
-connect(saw(440), tremolo(15)).start()
+connect(saw('C4'), gain({ value: sine(4) })).start()
 ```
 
 #### Synths
@@ -161,11 +159,13 @@ marimba.stop()
 
 SynthKit uses frequencies in hertzs to represent pitches, linear gain values to represent amplitudes and number of samples to represent buffer lengths. But sometimes you want to provide those using different units. Here are some conversion utilities:
 
-- `tempo(bpm, subdivision)`: convert from beats per minute to hertzs
-- `note(name or midi)`: convert a note name or note midi number to its frequency
-- `db(num)`: convert from decibels to gain value
-- `level(num)`: convert from level (0 to 100 in logaritmic scale) to gain value
-- `secs(num)`: convert from seconds to number of samples
+- `noteToFreq(name)`: convert a note name or note midi number to its frequency
+- `midiToFreq(midi)`: convert a note name or note midi number to its frequency
+- `tempoToFreq(bpm, subdivision)`: convert from beats per minute to hertzs
+- `dBToGain(db)`: convert from decibels to gain value
+- `levelToGain(level)`: convert from level (0 to 100 in logaritmic scale) to gain value
+- `gainToDb(gain)`: convert from gain to decibels
+- `secsToSamples(num)`: convert from seconds to number of samples
 
 ## Livecoding in the browser
 

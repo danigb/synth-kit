@@ -41,13 +41,15 @@ if (Context) module.exports = new Context;
  * @module context
  */
 // Shim to make connect chainable (soon to be implemented native)
-var proto = Object.getPrototypeOf(Object.getPrototypeOf(index.createGain()));
-var _connect = proto.connect;
-proto.connect = function () {
-  _connect.apply(this, arguments);
-  console.log('connect!', this, arguments[0]);
-  return this
-};
+if (index && index.createGain) {
+  var proto = Object.getPrototypeOf(Object.getPrototypeOf(index.createGain()));
+  var _connect = proto.connect;
+  proto.connect = function () {
+    _connect.apply(this, arguments);
+    console.log('connect!', this, arguments[0]);
+    return this
+  };
+}
 
 /**
  * Get the audio context.
@@ -129,7 +131,7 @@ function fillStr (s, num) { return Array(num + 1).join(s) }
 function isNum (x) { return typeof x === 'number' }
 function isStr (x) { return typeof x === 'string' }
 function isDef (x) { return typeof x !== 'undefined' }
-function midiToFreq (midi, tuning) {
+function midiToFreq$1 (midi, tuning) {
   return Math.pow(2, (midi - 69) / 12) * (tuning || 440)
 }
 
@@ -228,7 +230,7 @@ function parse (str, isTonic, tuning) {
   if (m[3]) { // has octave
     p.oct = +m[3];
     p.midi = pos + 12 * (p.oct + 1);
-    p.freq = midiToFreq(p.midi, tuning);
+    p.freq = midiToFreq$1(p.midi, tuning);
   }
   if (isTonic) p.tonicOf = m[4];
   return p
@@ -305,7 +307,7 @@ function midi (note) {
  */
 function freq (note, tuning) {
   var m = midi(note);
-  return m === null ? null : midiToFreq(m, tuning)
+  return m === null ? null : midiToFreq$1(m, tuning)
 }
 
 var parser = { parse: parse, build: build, regex: regex, midi: midi, freq: freq };
@@ -320,39 +322,67 @@ FNS.forEach(function (name) {
 
 var index$1 = parser;
 
+/**
+ * This module provides some conversion utilities between different units
+ * used when dealing with audio
+ *
+ * @example
+ * import { noteToFreq } from 'synth-kit'
+ *
+ * noteToFreq('A4') // => 440
+ * @module units
+ */
 var pow = Math.pow;
 
 /**
+ * Convert from note midi number to frequency
+ * @param {Number} midi - the midi note number (can have decimals)
+ * @param {Number} tuning - (Optional) the frequency of a reference A4 note (440 by default)
+ * @return {Number} the note frequency
+ * @example
+ * midiToFreq(69) // => 440
+ * midiToFreq(69.5) // => 452.8929841231365
+ * midiToFreq(70) // => 466.1637615180899
+ */
+function midiToFreq (value, base) { return pow(2, (+value - 69) / 12) * (base || 440) }
+
+/**
+ * Convert from note name to frequency
+ * @param {String} note - the note name
+ * @param {Number} tuning - (Optional) the tuning of A4 (440 by default)
+ * @return {Number} the note frequency
+ * @example
+ * noteToFreq('C3') // => 130.8127826502993
+ */
+var noteToFreq = index$1.freq;
+
+/**
  * Convert from beats per minute to hertzs
+ *
  * @param {Integer} bpm - the tempo
  * @param {Integer} sub - (Optional) subdivision (default 1)
  * @return {Float} the tempo expressed in hertzs
+ * @example
+ * tempoToFreq(120) // => 2
+ * tempoToFreq(120, 4) // => 8
  */
-function tempo (bpm, sub) { return (bpm / 60) * (sub || 1) }
+function tempoToFreq (bpm, sub) { return (bpm / 60) * (sub || 1) }
 
 /**
- * Get frequency of a note. The note can be a note name in scientific
- * notation (for example: 'C#2') or a midi number
- */
-function note (name, base) {
-  return index$1.freq(name)
-}
-
-function hz (value, base) {
-  if (typeof value === 'string') {
-    base = base || 440;
-    return pow(2, (+value - 69) / 12) * base
-  } else {
-    return Math.abs(+value)
-  }
-}
-
-/**
- *  Convert decibels into gain.
- *  @param  {Number} db
- *  @return {Number} the gain (from 0 to 1)
+ * Convert decibels into gain.
+ * @param  {Number} db
+ * @return {Number} the gain (from 0 to 1)
+ * @example
+ * dBToGain(-3) // => 0.7071067811865475
  */
 function dBToGain (db) { return pow(2, db / 6) }
+
+/**
+ * Convert from level (an equal power scale from 0 to 100) into gain.
+ * @param {Number} level - from 0 to 100
+ * @return {Number} gain (from 0 to 1)
+ */
+function levelToGain (level) { return Math.sin(0.5 * Math.PI * level / 100) }
 
 /**
  *  Convert gain to decibels.
@@ -526,7 +556,7 @@ function isStartable (node) { return node && typeof node.start === 'function' }
  * @private
  */
 function plug (name, value, node) {
-  if (typeof value === 'undefined') {
+  if (value === null || typeof value === 'undefined') {
     // do nothing
   } else if (typeof value.connect === 'function') {
     node[name].value = 0;
@@ -566,28 +596,42 @@ function lifecycle (node, dependents) {
 /** @module signals */
 
 /**
- * Create a gain node
- * @param {Float|AudioNode} gain - the gain value or modulator
- * @param {Object} options - (Optional) options may include:
+ * Create a GainNode
  *
+ * @param {Object} config - may include:
+ *
+ * - value (or gain): the gain (can be a number or a signal)
+ * - dB (or db): the gain in dB (only if gain is not specified)
+ * - level: the gain in a logaritmic scale from 0 to 100
  * - context: the audio context to use to create the signal
  *
- * @return {AudioNode} the gain node
+ * This funcion accepts a number with the gain value instead of a config object.
+ *
+ * @return {AudioNode} a GainNode
  * @example
- * conn(sine(440), gain(0.3))
- * @example
+ * gain({ dB: -3, context: <AudioContext> })
  * // with modulation (kind of tremolo)
- * conn(sine(400), gain(sine(10)))
- * @example
- * using a configuration object
- * gain({ gain: 0.5, context: <AudioContext> })
+ * conn(sine(400), gain({ value: sine(10) }))
+ * // passing a number instead of an object
+ * conn(sine('C4'), gain(0.3))
  */
-function gain (gain, opts) {
-  if (arguments.length === 1 && !isA('number', gain)) return gain(gain.gain, gain)
-  var node = context(opts ? opts.context : null).createGain();
+function gain (opts) {
+  opts = opts || OPTS;
+  var node = context(opts.context).createGain();
   return lifecycle(node, [
-    plug('gain', gain, node)
+    plug('gain', getGain(opts), node)
   ])
+}
+
+// given an config object, return the gain
+function getGain (opts) {
+  return isA('number', opts) ? opts
+    : opts.value ? opts.value
+    : opts.gain ? opts.gain
+    : isA('number', opts.dB) ? dBToGain(opts.dB)
+    : isA('number', opts.db) ? dBToGain(opts.db)
+    : isA('number', opts.level) ? levelToGain(opts.level)
+    : null
 }
 
 /**
@@ -637,10 +681,13 @@ function signal (value, opts) {
 
 /**
  * Create a node that bypasses the signal
- * @param {AudioContext} context - (Optional) the audio context
+ * @param {Object} config - may include:
+ *
+ * - context: the audio context to use
+ *
  * @return {AudioNode} the bypass audio node
  * @example
- * conn(sine(300), add(bypass(), dly(0.2)))
+ * conn(sine('C4'), add(bypass(), dly(0.2)))
  */
 function bypass (o) {
   return context(o ? o.context : null).createGain()
@@ -648,19 +695,16 @@ function bypass (o) {
 
 /**
  * Multiply a signal.
- * @param {Integer|AudioNode} value - the value
- * @param {AudioNode} signal - the signal to multiply by
- * @param {Object} options - (Optional) options may include:
  *
- * - context: the audio context to use to create the signal
- *
+ * @param {Integer} value - the value
+ * @param {Integer|AudioNode} signal - the signal to multiply by
  * @example
  * // a vibrato effect
- * sine(440, { detune: mult(500, sine(tempo(160))) })
+ * sine(440, { detune: mult(500, sine(2)) })
  */
-function mult (value, signal, opts) {
+function mult (value, signal) {
   if (isA('number', signal)) return value * signal
-  return conn(signal, gain(value, opts))
+  return conn(signal, gain({ value: value, context: signal.context }))
 }
 
 /**
@@ -681,179 +725,217 @@ function scale (min, max, source) {
 }
 
 /**
- * This module provides a concise API over the AudioContext's createOscillator
+ * This module provides some syntactic sugar over the AudioContext.createOscillator
  * function
- * @example
- * import { sine, lfo, Hz, master } from 'synth-kit'
  *
- * master.start(sine(Hz('A4'), { detune: lfo(5, 10) }))
+ * @example
+ * import { sine, square, master } from 'synth-kit'
+ *
+ * master.start(sine('A4'))
+ * master.start(square({ note: 'c3', detune: -10 }))
  * @module oscillators
  */
-/**
- * Create an oscillator (an OscillatorNode)
- * @param {String} type - one of OscillatorNode [types]()
- * @param {Float|AudioNode} - the frequency (can be a number or a signal)
- * @param {Object} options - (Optional) Options can include:
- *
- * - detune: the detune in cents. Can be a number or a signal (see example)
- * - context: the audio context to use
- *
- * @return {AudioNode} the oscillator
- * @example
- * osc('sine', 880)
- * osc('square', 880, { detune: -10 })
- * osc('sawtooth', 1600, { detune: lfo(5, 50) }
- * // any signal can be the detune modulator
- * osc('sawtooth', 1600, { detune: conn(...) }
- */
-function osc (type, frequency, o) {
-  if (!o) o = OPTS;
-  var osc = context(o.context).createOscillator();
-  osc.type = type || 'sine';
+// Create a OscillatorNode of the given type and configuration
+// this is a private function intended to be partially applied
+function create (type, opts) {
+  opts = opts || OPTS;
+  type = type || opts.type;
+  var osc = context(opts.context).createOscillator();
+  if (type) osc.type = type;
   return lifecycle(osc, [
-    plug('frequency', frequency, osc),
-    plug('detune', o.detune, osc)
+    plug('frequency', getFreq(opts), osc),
+    plug('detune', opts.detune, osc)
   ])
 }
+
+// given a configuration object, get the frequency
+function getFreq (obj) {
+  return obj.frequency ? obj.frequency
+    : obj.freq ? obj.freq
+    : obj.midi ? midiToFreq(obj.midi)
+    : obj.note ? noteToFreq(obj.note)
+    : isA('string', obj) ? noteToFreq(obj)
+    : isA('number', obj) ? obj
+    : null
+}
+
 /**
- * Create a sine oscillator. An alias for `osc('sine', ...)`
+ * Create an oscillator (an OscillatorNode)
+ *
  * @function
- * @see osc
- * @param {Float|AudioNode} frequency - the frequency (can be a number or a signal)
- * @param {Object} options - (Optional) same as `osc` options
+ * @param {Object} config - may include:
+ *
+ * - type: one of the OscillatorNode types
+ * - frequency (or freq): the oscillator frequency (can be a signal)
+ * - detune: the detune in cents (can be a signal)
+ * - note: the note name to get the frequency from (if frequency is not present)
+ * - midi: the note midi number to get the frequency from (if frequency is not present)
+ * - context: the audio context to use
+ *
+ * Notice that instead of a config object, this function also accepts a note
+ * name or a frequency value (see examples)
+ *
  * @return {AudioNode} the oscillator
  * @example
- * sine(1760)
- * sine(800, { detune: -50 })
+ * // basic usage
+ * osc({ type: 'sine', frequency: 880 })
+ * osc({ note: 'C4', type: 'square', detune: -10 })
+ * // parameter modulation
+ * osc({ freq: 1500, detune: osc({ freq: 20}) })
+ * osc({ freq: envelope(...), type: 'square' })
+ * // without configuration object
+ * osc('C4')
+ * osc(1200)
  */
-const sine = osc.bind(null, 'sine');
+const osc = create.bind(null, null);
+
 /**
- * Create a sawtooth oscillator. An alias for `osc('sawtooth', ...)`
+ * Create a sine oscillator. An alias for `osc({ type: 'sine', ... })`
  * @function
  * @see osc
- * @param {Float|AudioNode} - the frequency (can be a number or a signal)
- * @param {Object} options - (Optional) same as `osc` options
+ * @param {Object} config - Same as `osc` function, but without 'type'
  * @return {AudioNode} the oscillator
  * @example
- * saw(1760)
- * saw(440, { detune: lfo(5, 10) })
+ * sine('C4')
+ * sine({ midi: 70, detune: -50 })
  */
-const saw = osc.bind(null, 'sawtooth');
+const sine = create.bind(null, 'sine');
+
 /**
- * Create a square oscillator. An alias for `osc('square', ...)`
+ * Create a sawtooth oscillator. An alias for `osc({ type: 'sawtooth', ... })`
  * @function
  * @see osc
- * @param {Float|AudioNode} - the frequency (can be a number or a signal)
- * @param {Object} options - (Optional) same as `osc` options
+ * @param {Object} config - Same as `osc` function, but without 'type'
  * @return {AudioNode} the oscillator
  * @example
- * square(1760, { context: offline() })
+ * saw('A3')
+ * saw({ freq: 440, detune: lfo(5, 10) })
  */
-const square = osc.bind(null, 'square');
+const saw = create.bind(null, 'sawtooth');
 /**
- * Create a triangle oscillator. An alias for `osc('triangle', ...)`
+ * Create a square oscillator. An alias for `osc({ type: 'square', ... })`
  * @function
  * @see osc
- * @param {Float|AudioNode} - the frequency (can be a number or a signal)
- * @param {Object} options - (Optional) same as `osc` options
+ * @param {Object} config - Same as `osc` function, but without 'type'
  * @return {AudioNode} the oscillator
  * @example
- * triangle(1760, { detune: -10 })
+ * square({ note: 'c#3', context: offline() })
+ */
+const square = create.bind(null, 'square');
+
+/**
+ * Create a triangle oscillator. An alias for `osc({ type: 'triangle', ... })`
+ * @function
+ * @see osc
+ * @param {Object} config - Same as `osc` function, but without 'type'
+ * @return {AudioNode} the oscillator
+ * @example
+ * triangle({ note: 'Bb4', detune: -10 })
  */
 const triangle = osc.bind(null, 'triangle');
 
 /**
- * Create a lfo. It's a decorated oscillator with some goodies to reduce
- * the boilerplate code with signal modulators
+ * Create an LFO (low frequency oscillator). It's a standard oscillator with
+ * some goodies to reduce the boilerplate code when used as signal modulator.
  *
- * @param {Integer} freq - the frequency
- * @param {Integer} amplitude - the amplitude
- * @param {Options} options - (Optional) Options can include:
+ * @see osc
+ * @param {Options} config - May include any of the `osc` function plus:
  *
- * - context: the audio context to be used
- * - tempo: if provided, the freq parameter is the number of beats inside that tempo
+ * - tempo: the tempo used to calculate the frequency (it overrides the frequency parameter)
+ * - division: the number of subdivisions of the tempo (defaults to 1)
+ * - amplitude: the amplitude of the oscillator
  *
  * @example
- * master.start(sine(300, { detune: lfo(5, 10) }))
- * // too complicated?
- * master.start(sine(300, { detune: lfo(4, 10, { tempo: 120 }))
+ * sine({ note: 'C4', detune: lfo({ freq: 5, amplitude: 50 }) })
+ * sine({ note: 'A4', detune: lfo({ amplitude: 10, tempo: 120, division: 3 })
  */
-function lfo (freq, amp, o) {
-  freq = freq || 7;
-  amp = amp || 1;
-  o = o || OPTS;
-  if (o.tempo) freq = tempo(o.tempo, freq);
-  return mult(amp, osc(o.type || 'sine', freq))
+function lfo (opts) {
+  opts = opts || OPTS;
+  var node = osc(opts);
+  if (opts.tempo) node.frequency.value = tempoToFreq(opts.tempo, opts.division);
+  return mult(opts.amplitude || 1, node)
 }
 
-/** @module filters */
 /**
- * Create a filter (a [BiquadFilterNode](https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode))
+ * This module provides some syntactic sugar over the AudioContext.createBiquadFilter
+ * function.
  *
- * @param {String} type - the filter [type](https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode/type)
- * @param {Number|AudioNode} frequency - the frequency in hertzs (can be a number or a signal)
- * @param {Object} options - (Optional) options may include:
- *
- * - detune: the detune of the frequency in cents (can be a number or a signal)
- * - Q: the Q of the filter (can be a number or a signal)
- * - context: the audio context to use
- *
- * @return {AudioNode} the filter
  * @example
- * conn(square(800), filter('lowpass', 400))
+ * import { conn, square, lowpass, filter, master } from 'synth-kit'
+ *
+ * master.start(conn(square('C4'), lowpass('C5')))
+ * master.start(conn(square('A4'), filter({ type: 'hipass', Q: 10, freq: 1000 }))
+ * @module filters
  */
-function filter (type, frequency, o) {
-  if (isA('object', type)) {
-    o = type; type = o.type; frequency = o.frequency;
-  }
-  o = o || OPTS;
-  var filter = context(o.context).createBiquadFilter();
-  filter.type = type || 'lowpass';
+// private: create a filter
+function create$1 (type, opts) {
+  opts = opts || OPTS;
+  var filter = context(opts.context).createBiquadFilter();
+  filter.type = type || opts.type || 'lowpass';
   return lifecycle(filter, [
-    plug('frequency', frequency, filter),
-    plug('Q', o.Q, filter),
-    plug('detune', o.detune, filter)
+    plug('frequency', getFreq(opts), filter),
+    plug('Q', opts.Q, filter),
+    plug('detune', opts.detune, filter)
   ])
 }
 
 /**
- * Create a lowpass filter. An alias for `filter('lowpass', ...)`
+ * Create a filter (a [BiquadFilterNode](https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode))
  *
  * @function
- * @param {Number|AudioNode} frequency - the frequency in hertzs (can be a number or a signal)
- * @param {Object} options - (Optional) the same options as `filter` function
- * @return {AudioNode} the lowpass filter
+ * @param {Object} config - it may include:
+ *
+ * - frequency (or freq, or note or midi): the frequency expressed in hertzs
+ * (or midi note number or note name)
+ * - type: one of the BiquadFilterNode types
+ * - detune: the detune of the frequency in cents (can be a number or a signal)
+ * - Q: the Q of the filter (can be a number or a signal)
+ * - context: the audio context to use
+ *
+ * Instead of a configuration object you can pass a frequency number of note
+ * name just to specify the frequency.
+ *
+ * @return {AudioNode} the BiquadFilterNode
  * @example
- * conn(square(800), lowpass(400))
- * @see filter
+ * conn(square(800), filter({ type: 'lowpass', freq: 600 }))
  */
-const lowpass = filter.bind(null, 'lowpass');
+var filter = create$1.bind(null, null);
 
 /**
- * Create a hipass filter. An alias for `filter('hipass', ...)`
+ * Create a lowpass filter. An alias for `filter({ type: 'lowpass', ... })`
  *
  * @function
- * @param {Number|AudioNode} frequency - the frequency in hertzs (can be a number or a signal)
- * @param {Object} options - (Optional) the same options as `filter` function
+ * @param {Object} config - same as `filter` function but without type
+ * @return {AudioNode} the lowpass filter
+ * @see filter
+ * @example
+ * conn(square('C4'), lowpass(400))
+ */
+const lowpass = create$1.bind(null, 'lowpass');
+
+/**
+ * Create a hipass filter. An alias for `filter({ type: 'hipass', ... })`
+ *
+ * @function
+ * @param {Object} config - same as `filter` function but without type
  * @return {AudioNode} the hipass filter
+ * @see filter
  * @example
  * conn(square(800), hipass(400))
- * @see filter
  */
-const hipass = filter.bind(null, 'highpass');
+const hipass = create$1.bind(null, 'highpass');
 
 /**
- * Create a bandpass filter. An alias for `filter('bandpass', ...)`
+ * Create a bandpass filter. An alias for `filter({ type: 'bandpass', ... })`
  *
  * @function
- * @param {Number|AudioNode} frequency - the frequency in hertzs (can be a number or a signal)
- * @param {Object} options - (Optional) the same options as `filter` function
+ * @param {Object} config - same as `filter` function but without type
  * @return {AudioNode} the bandpass filter
+ * @see filter
  * @example
  * conn(square(800), bandpass(400))
- * @see filter
  */
-const bandpass = filter.bind(null, 'hipass');
+const bandpass = create$1.bind(null, 'hipass');
 
 /* global XMLHttpRequest */
 var NONE = {};
@@ -1305,7 +1387,9 @@ function withDefaults (synth, defaults) {
 
 /**
  * Create a VCA: an amplifier controlled by an ADSR envelope
+ * @function
  * @param {Object} options - may include:
+ * @return {AudioNode} a GainNode
  *
  * - db: the gain in decibels
  * - gain: the gain (will override dB param)
@@ -1325,7 +1409,9 @@ const vca = withDefaults(function (opts) {
 
 /**
  * Create a VCF: a filter controlled by an ADSR envelope
+ * @function
  * @param {Object} config - may include:
+ * @return {AudioNode} the BiquadFilterNode
  *
  * - type: filter type
  * - frequency: filter frequency (can be a signal)
@@ -1598,9 +1684,10 @@ exports.now = now;
 exports.dest = dest;
 exports.samplingRate = samplingRate;
 exports.timeToSamples = timeToSamples;
-exports.tempo = tempo;
-exports.note = note;
-exports.hz = hz;
+exports.levelToGain = levelToGain;
+exports.midiToFreq = midiToFreq;
+exports.noteToFreq = noteToFreq;
+exports.tempoToFreq = tempoToFreq;
 exports.dBToGain = dBToGain;
 exports.gainToDb = gainToDb;
 exports.conn = conn;

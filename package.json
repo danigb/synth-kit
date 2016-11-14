@@ -44,5 +44,10 @@
   "dependencies": {
     "audio-context": "^0.1.0",
     "note-parser": "^2.0.0"
+  },
+  "standard": {
+    "ignore": [
+      "dist/**", "node_modules/**"
+    ]
   }
 }

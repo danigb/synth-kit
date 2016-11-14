@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>filters - Postman Documentation</title>
+    <title>units - Postman Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -28,7 +28,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">filters</h1>
+    <h1 class="page-title">units</h1>
     
 
     
@@ -50,8 +50,8 @@
     <div class="container-overview">
     
         
-            <div class="description"><p>This module provides some syntactic sugar over the AudioContext.createBiquadFilter
-function.</p></div>
+            <div class="description"><p>This module provides some conversion utilities between different units
+used when dealing with audio</p></div>
         
 
         
@@ -100,7 +100,7 @@ function.</p></div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="filters.js.html">filters.js</a>, <a href="filters.js.html#line1">line 1</a>
+        <a href="units.js.html">units.js</a>, <a href="units.js.html#line1">line 1</a>
     </li></ul></dd>
     
 
@@ -127,10 +127,9 @@ function.</p></div>
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>import { conn, square, lowpass, filter, master } from 'synth-kit'
+    <pre class="prettyprint"><code>import { noteToFreq } from 'synth-kit'
 
-master.start(conn(square('C4'), lowpass('C5')))
-master.start(conn(square('A4'), filter({ type: 'hipass', Q: 10, freq: 1000 }))</code></pre>
+noteToFreq('A4') // => 440</code></pre>
 
 
 
@@ -158,14 +157,14 @@ master.start(conn(square('A4'), filter({ type: 'hipass', Q: 10, freq: 1000 }))</
 
     
 
-    <h4 class="name" id=".bandpass"><span class="type-signature">(static) </span>bandpass<span class="signature">(config)</span><span class="type-signature"> &rarr; {AudioNode}</span></h4>
+    <h4 class="name" id=".dBToGain"><span class="type-signature">(static) </span>dBToGain<span class="signature">(db)</span><span class="type-signature"> &rarr; {Number}</span></h4>
 
     
 
 
 
 <div class="description">
-    <p>Create a bandpass filter. An alias for <code>filter({ type: 'bandpass', ... })</code></p>
+    <p>Convert decibels into gain.</p>
 </div>
 
 
@@ -201,13 +200,13 @@ master.start(conn(square('A4'), filter({ type: 'hipass', Q: 10, freq: 1000 }))</
 
         <tr>
             
-                <td class="name"><code>config</code></td>
+                <td class="name"><code>db</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Object</span>
+<span class="param-type">Number</span>
 
 
             
@@ -217,7 +216,7 @@ master.start(conn(square('A4'), filter({ type: 'hipass', Q: 10, freq: 1000 }))</
 
             
 
-            <td class="description last"><p>same as <code>filter</code> function but without type</p></td>
+            <td class="description last"></td>
         </tr>
 
     
@@ -258,19 +257,12 @@ master.start(conn(square('A4'), filter({ type: 'hipass', Q: 10, freq: 1000 }))</
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="filters.js.html">filters.js</a>, <a href="filters.js.html#line85">line 85</a>
+        <a href="units.js.html">units.js</a>, <a href="units.js.html#line56">line 56</a>
     </li></ul></dd>
     
 
     
 
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li>filter</li>
-        </ul>
-    </dd>
     
 
     
@@ -292,7 +284,7 @@ master.start(conn(square('A4'), filter({ type: 'hipass', Q: 10, freq: 1000 }))</
 
         
 <div class="param-desc">
-    <p>the bandpass filter</p>
+    <p>the gain (from 0 to 1)</p>
 </div>
 
 
@@ -303,7 +295,7 @@ master.start(conn(square('A4'), filter({ type: 'hipass', Q: 10, freq: 1000 }))</
     </dt>
     <dd>
         
-<span class="param-type">AudioNode</span>
+<span class="param-type">Number</span>
 
 
     </dd>
@@ -314,7 +306,7 @@ master.start(conn(square('A4'), filter({ type: 'hipass', Q: 10, freq: 1000 }))</
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>conn(square(800), bandpass(400))</code></pre>
+    <pre class="prettyprint"><code>dBToGain(-3) // => 0.7071067811865475</code></pre>
 
 
 
@@ -323,14 +315,14 @@ master.start(conn(square('A4'), filter({ type: 'hipass', Q: 10, freq: 1000 }))</
 
     
 
-    <h4 class="name" id=".filter"><span class="type-signature">(static) </span>filter<span class="signature">(config)</span><span class="type-signature"> &rarr; {AudioNode}</span></h4>
+    <h4 class="name" id=".gainToDb"><span class="type-signature">(static) </span>gainToDb<span class="signature">(gain)</span><span class="type-signature"> &rarr; {Decibels}</span></h4>
 
     
 
 
 
 <div class="description">
-    <p>Create a filter (a <a href="https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode">BiquadFilterNode</a>)</p>
+    <p>Convert gain to decibels.</p>
 </div>
 
 
@@ -366,13 +358,13 @@ master.start(conn(square('A4'), filter({ type: 'hipass', Q: 10, freq: 1000 }))</
 
         <tr>
             
-                <td class="name"><code>config</code></td>
+                <td class="name"><code>gain</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Object</span>
+<span class="param-type">Number</span>
 
 
             
@@ -382,17 +374,7 @@ master.start(conn(square('A4'), filter({ type: 'hipass', Q: 10, freq: 1000 }))</
 
             
 
-            <td class="description last"><p>it may include:</p>
-<ul>
-<li>frequency (or freq, or note or midi): the frequency expressed in hertzs
-(or midi note number or note name)</li>
-<li>type: one of the BiquadFilterNode types</li>
-<li>detune: the detune of the frequency in cents (can be a number or a signal)</li>
-<li>Q: the Q of the filter (can be a number or a signal)</li>
-<li>context: the audio context to use</li>
-</ul>
-<p>Instead of a configuration object you can pass a frequency number of note
-name just to specify the frequency.</p></td>
+            <td class="description last"><p>(0-1)</p></td>
         </tr>
 
     
@@ -433,7 +415,7 @@ name just to specify the frequency.</p></td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="filters.js.html">filters.js</a>, <a href="filters.js.html#line49">line 49</a>
+        <a href="units.js.html">units.js</a>, <a href="units.js.html#line74">line 74</a>
     </li></ul></dd>
     
 
@@ -459,10 +441,6 @@ name just to specify the frequency.</p></td>
 <h5>Returns:</h5>
 
         
-<div class="param-desc">
-    <p>the BiquadFilterNode</p>
-</div>
-
 
 
 <dl class="param-type">
@@ -471,7 +449,7 @@ name just to specify the frequency.</p></td>
     </dt>
     <dd>
         
-<span class="param-type">AudioNode</span>
+<span class="param-type">Decibels</span>
 
 
     </dd>
@@ -482,7 +460,7 @@ name just to specify the frequency.</p></td>
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>conn(square(800), filter({ type: 'lowpass', freq: 600 }))</code></pre>
+    <pre class="prettyprint"><code>s.gainToDb(0.3) // => -10.457574905606752</code></pre>
 
 
 
@@ -491,14 +469,14 @@ name just to specify the frequency.</p></td>
 
     
 
-    <h4 class="name" id=".hipass"><span class="type-signature">(static) </span>hipass<span class="signature">(config)</span><span class="type-signature"> &rarr; {AudioNode}</span></h4>
+    <h4 class="name" id=".levelToGain"><span class="type-signature">(static) </span>levelToGain<span class="signature">(level)</span><span class="type-signature"> &rarr; {Number}</span></h4>
 
     
 
 
 
 <div class="description">
-    <p>Create a hipass filter. An alias for <code>filter({ type: 'hipass', ... })</code></p>
+    <p>Convert from level (an equal power scale from 0 to 100) into gain.</p>
 </div>
 
 
@@ -534,13 +512,13 @@ name just to specify the frequency.</p></td>
 
         <tr>
             
-                <td class="name"><code>config</code></td>
+                <td class="name"><code>level</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Object</span>
+<span class="param-type">Number</span>
 
 
             
@@ -550,7 +528,7 @@ name just to specify the frequency.</p></td>
 
             
 
-            <td class="description last"><p>same as <code>filter</code> function but without type</p></td>
+            <td class="description last"><p>from 0 to 100</p></td>
         </tr>
 
     
@@ -591,19 +569,12 @@ name just to specify the frequency.</p></td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="filters.js.html">filters.js</a>, <a href="filters.js.html#line73">line 73</a>
+        <a href="units.js.html">units.js</a>, <a href="units.js.html#line65">line 65</a>
     </li></ul></dd>
     
 
     
 
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li>filter</li>
-        </ul>
-    </dd>
     
 
     
@@ -625,7 +596,7 @@ name just to specify the frequency.</p></td>
 
         
 <div class="param-desc">
-    <p>the hipass filter</p>
+    <p>gain (from 0 to 1)</p>
 </div>
 
 
@@ -636,7 +607,7 @@ name just to specify the frequency.</p></td>
     </dt>
     <dd>
         
-<span class="param-type">AudioNode</span>
+<span class="param-type">Number</span>
 
 
     </dd>
@@ -647,7 +618,7 @@ name just to specify the frequency.</p></td>
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>conn(square(800), hipass(400))</code></pre>
+    <pre class="prettyprint"><code>levelToGain(80) // => 0.9510565162951535</code></pre>
 
 
 
@@ -656,14 +627,14 @@ name just to specify the frequency.</p></td>
 
     
 
-    <h4 class="name" id=".lowpass"><span class="type-signature">(static) </span>lowpass<span class="signature">(config)</span><span class="type-signature"> &rarr; {AudioNode}</span></h4>
+    <h4 class="name" id=".midiToFreq"><span class="type-signature">(static) </span>midiToFreq<span class="signature">(midi, tuning)</span><span class="type-signature"> &rarr; {Number}</span></h4>
 
     
 
 
 
 <div class="description">
-    <p>Create a lowpass filter. An alias for <code>filter({ type: 'lowpass', ... })</code></p>
+    <p>Convert from note midi number to frequency</p>
 </div>
 
 
@@ -699,13 +670,13 @@ name just to specify the frequency.</p></td>
 
         <tr>
             
-                <td class="name"><code>config</code></td>
+                <td class="name"><code>midi</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Object</span>
+<span class="param-type">Number</span>
 
 
             
@@ -715,7 +686,30 @@ name just to specify the frequency.</p></td>
 
             
 
-            <td class="description last"><p>same as <code>filter</code> function but without type</p></td>
+            <td class="description last"><p>the midi note number (can have decimals)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>tuning</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(Optional) the frequency of a reference A4 note (440 by default)</p></td>
         </tr>
 
     
@@ -756,19 +750,12 @@ name just to specify the frequency.</p></td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="filters.js.html">filters.js</a>, <a href="filters.js.html#line61">line 61</a>
+        <a href="units.js.html">units.js</a>, <a href="units.js.html#line24">line 24</a>
     </li></ul></dd>
     
 
     
 
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li>filter</li>
-        </ul>
-    </dd>
     
 
     
@@ -790,7 +777,7 @@ name just to specify the frequency.</p></td>
 
         
 <div class="param-desc">
-    <p>the lowpass filter</p>
+    <p>the note frequency</p>
 </div>
 
 
@@ -801,7 +788,7 @@ name just to specify the frequency.</p></td>
     </dt>
     <dd>
         
-<span class="param-type">AudioNode</span>
+<span class="param-type">Number</span>
 
 
     </dd>
@@ -812,7 +799,372 @@ name just to specify the frequency.</p></td>
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>conn(square('C4'), lowpass(400))</code></pre>
+    <pre class="prettyprint"><code>midiToFreq(69) // => 440
+midiToFreq(69.5) // => 452.8929841231365
+midiToFreq(70) // => 466.1637615180899</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".noteToFreq"><span class="type-signature">(static) </span>noteToFreq<span class="signature">(note, tuning)</span><span class="type-signature"> &rarr; {Number}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Convert from note name to frequency</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>note</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the note name</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>tuning</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(Optional) the tuning of A4 (440 by default)</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="units.js.html">units.js</a>, <a href="units.js.html#line35">line 35</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>the note frequency</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Number</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>noteToFreq('C3') // => 130.8127826502993</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".tempoToFreq"><span class="type-signature">(static) </span>tempoToFreq<span class="signature">(bpm, sub)</span><span class="type-signature"> &rarr; {Float}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Convert from beats per minute to hertzs</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>bpm</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the tempo</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>sub</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>(Optional) subdivision (default 1)</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="units.js.html">units.js</a>, <a href="units.js.html#line47">line 47</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>the tempo expressed in hertzs</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Float</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>tempoToFreq(120) // => 2
+tempoToFreq(120, 4) // => 8</code></pre>
 
 
 
